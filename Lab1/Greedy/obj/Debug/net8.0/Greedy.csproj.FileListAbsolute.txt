@@ -1,0 +1,4 @@
+/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/obj/Debug/net8.0/Greedy.GeneratedMSBuildEditorConfig.editorconfig
+/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/obj/Debug/net8.0/Greedy.AssemblyInfoInputs.cache
+/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/obj/Debug/net8.0/Greedy.AssemblyInfo.cs
+/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/obj/Debug/net8.0/Greedy.csproj.CoreCompileInputs.cache

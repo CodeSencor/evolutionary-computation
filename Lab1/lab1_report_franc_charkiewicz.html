@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSP heuristics report</title>
+<style>
+ body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+ table { border-collapse: collapse; width: 100%; }
+ th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: right; }
+ th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
+ th { background: #f2f2f2; }
+ .plot { width: 100%; max-width: 640px; border: 1px solid #ddd; background: #fff; }
+ pre { white-space: pre-wrap; background: #f6f6f6; padding: .6rem; }
+ .legend { font-size: .9rem; color: #555; margin-top: .3rem; }
+ .bar { display: inline-block; width: 90px; height: 10px; vertical-align: middle;
+         background: linear-gradient(to right, rgb(255,220,60), rgb(135,0,0)); }
+ .ok { color: #1a7f37; font-weight: 600; } .bad { color: #b42318; font-weight: 600; }
+ section { margin-top: 2.5rem; }
+</style></head><body>
+<h1>Greedy heurestics report</h1>
+<p>Objective = cycle length (Euclidean, rounded to nearest integer) + sum of selected node costs. Lower is better.</p>
+<h2>Pseudocode</h2><p>All methods read the instance into masterArray, which stores every node (x, y, cost). M = number of runs (one per row; for the heuristics, row m starts from node m), N = solution size = ⌈n/2⌉, d(a, b) = Euclidean distance rounded to the nearest integer.</p><h3>Random</h3><pre>1. Initialise an M × N array.
+2. For every row m:
+3.     For every position n: put a random node index that is not yet used in row m.
+4. Repeat until the entire array is filled.</pre><h3>Nearest neighbor (end)</h3><pre>1. Initialise M lists of length N.
+2. For every row m:
+3.     Put node m at position 0.
+4.     For every position n from 1 to N − 1:
+5.         Among unused nodes, find h minimising the cost of appending it to the end of the path:
+               d(last, h) + cost(h), where last is the node at position n − 1.
+6.         Append h and mark it as used.
+7. Repeat until every list holds N nodes.</pre><h3>Nearest neighbor (any position)</h3><pre>0. Compute an n × n distance matrix d between every pair of nodes.
+1. Initialise M lists of length N.
+2. For every row m:
+3.     Put node m at position 0.
+4.     While row m holds fewer than N nodes:
+5.         Among unused nodes k and all positions on the open path, find the one with the minimal
+           immediate cost of insertion:
+               before the first node:          d(k, first) + cost(k)
+               between neighbours a and b:     d(a, k) + d(k, b) − d(a, b) + cost(k)
+               after the last node:            d(last, k) + cost(k)
+           (the edge closing the cycle, last → first, is not considered)
+6.         Insert k at that position and mark it as used.
+7. Repeat until every list holds N nodes.</pre><h3>Greedy cycle</h3><pre>0. Compute an n × n distance matrix d between every pair of nodes.
+1. Initialise M lists of length N.
+2. For every row m:
+3.     Put node m at position 0.
+4.     While row m holds fewer than N nodes:
+5.         The nodes in row m form a Hamiltonian cycle (the last node links back to the first).
+           Among unused nodes k and every edge (a, b) of the cycle, including the closing edge,
+           find the one with the smallest increase in cost:
+               d(a, k) + d(k, b) − d(a, b) + cost(k)
+6.         Insert k between a and b and mark it as used.
+7. Repeat until every list holds N nodes.</pre>
+<h2>Computational experiment</h2>
+<table><tr><th>Instance</th><th>Method</th><th>Min</th><th>Max</th><th>Average</th><th>Valid runs</th></tr>
+<tr><td>TSPA</td><td>Random</td><td>237427</td><td>284763</td><td>261434.11</td><td>200 / 200</td></tr><tr><td>TSPA</td><td>Nearest neighbor (end)</td><td>84362</td><td>90075</td><td>87476.63</td><td>200 / 200</td></tr><tr><td>TSPA</td><td>Nearest neighbor (any position)</td><td>72328</td><td>77022</td><td>74306.53</td><td>200 / 200</td></tr><tr><td>TSPA</td><td>Greedy cycle</td><td>72590</td><td>75281</td><td>73743.73</td><td>200 / 200</td></tr>
+</table>
+<p><span class="ok">&#10004;</span> All best solutions presented below were verified with the solution checker.</p>
+
+<section>
+  <h2>TSPA &mdash; Random</h2>
+  <p>Best of 200 valid runs: run #109 with objective <b>237427</b>.</p>
+  <svg viewBox="0 0 640 480" class="plot" role="img" aria-label="Best solution plot">
+<polygon points="290.5,369.9 513.8,363.8 283.8,209.5 258.9,315.3 454.7,421.1 425.9,392.4 20.9,285.7 101.3,275.3 582.6,231.1 143.9,311.5 377.1,233.6 77.0,387.4 474.0,443.6 34.3,169.9 87.2,171.7 199.6,364.3 69.7,297.4 566.2,201.2 381.4,332.6 235.8,403.3 607.7,385.4 537.9,272.8 483.7,396.3 406.2,290.9 192.3,198.4 219.4,431.0 441.6,368.8 32.0,289.0 384.3,174.6 547.7,168.1 97.7,404.2 146.6,277.5 283.4,172.0 323.0,353.2 484.6,160.5 373.8,344.5 166.0,367.4 275.5,256.8 591.3,311.4 399.5,430.5 311.5,165.8 339.1,367.0 470.2,285.7 430.2,400.0 452.2,363.8 538.7,292.7 176.8,275.0 37.5,312.1 205.9,243.9 187.2,263.0 130.6,433.7 64.1,426.9 278.7,451.9 343.9,442.5 164.8,433.9 536.4,263.8 111.0,217.1 47.8,168.8 257.1,264.4 287.8,189.0 269.8,277.0 133.7,281.1 168.0,306.8 442.2,452.9 136.3,262.9 297.2,319.9 25.6,324.7 389.5,232.5 311.0,324.1 70.8,380.2 363.5,325.8 529.1,395.3 609.4,400.0 156.0,289.9 55.7,279.6 173.2,347.4 194.5,212.6 155.3,436.3 333.5,455.9 233.4,341.2 514.8,391.2 379.1,288.4 74.3,439.8 470.6,420.2 568.2,417.3 579.1,376.1 530.3,169.1 123.5,314.4 508.1,454.2 377.4,403.8 187.9,429.9 261.2,415.6 129.4,300.9 246.9,231.6 151.3,204.8 28.1,457.7 40.7,402.1 173.8,391.3 381.2,381.0 99.0,246.2" fill="none" stroke="#3b6ea5" stroke-width="1.4"/>
+<circle cx="465.7" cy="386.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 0 (unused): (2944, 497) cost 1607</title></circle>
+<circle cx="536.4" cy="263.8" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 1: (3409, 1305) cost 225</title></circle>
+<circle cx="164.8" cy="433.9" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 2: (964, 186) cost 387</title></circle>
+<circle cx="529.4" cy="289.5" r="4.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 3 (unused): (3363, 1136) cost 327</title></circle>
+<circle cx="205.9" cy="243.9" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 4: (1234, 1436) cost 864</title></circle>
+<circle cx="287.8" cy="189.0" r="6.6" fill="rgb(184,89,24)" stroke="#222" stroke-width="0.6"><title>node 5: (1773, 1797) cost 1188</title></circle>
+<circle cx="601.5" cy="239.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 6 (unused): (3837, 1462) cost 1598</title></circle>
+<circle cx="47.8" cy="168.8" r="7.2" fill="rgb(171,66,18)" stroke="#222" stroke-width="0.6"><title>node 7: (194, 1930) cost 1402</title></circle>
+<circle cx="442.6" cy="301.3" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 8 (unused): (2792, 1058) cost 873</title></circle>
+<circle cx="406.2" cy="290.9" r="4.2" fill="rgb(232,178,48)" stroke="#222" stroke-width="0.6"><title>node 9: (2552, 1127) cost 383</title></circle>
+<circle cx="219.4" cy="431.0" r="6.5" fill="rgb(184,90,25)" stroke="#222" stroke-width="0.6"><title>node 10: (1323, 205) cost 1181</title></circle>
+<circle cx="53.3" cy="298.0" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 11 (unused): (230, 1080) cost 1059</title></circle>
+<circle cx="125.8" cy="329.1" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 12 (unused): (707, 875) cost 1765</title></circle>
+<circle cx="425.9" cy="392.4" r="8.0" fill="rgb(155,36,10)" stroke="#222" stroke-width="0.6"><title>node 13: (2682, 459) cost 1670</title></circle>
+<circle cx="136.3" cy="262.9" r="8.3" fill="rgb(149,27,7)" stroke="#222" stroke-width="0.6"><title>node 14: (776, 1311) cost 1756</title></circle>
+<circle cx="389.5" cy="232.5" r="7.5" fill="rgb(165,54,15)" stroke="#222" stroke-width="0.6"><title>node 15: (2442, 1511) cost 1505</title></circle>
+<circle cx="273.8" cy="280.7" r="4.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 16 (unused): (1681, 1194) cost 416</title></circle>
+<circle cx="567.4" cy="178.2" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 17 (unused): (3613, 1868) cost 1224</title></circle>
+<circle cx="246.9" cy="231.6" r="8.0" fill="rgb(156,38,10)" stroke="#222" stroke-width="0.6"><title>node 18: (1504, 1517) cost 1650</title></circle>
+<circle cx="530.3" cy="169.1" r="7.3" fill="rgb(170,64,17)" stroke="#222" stroke-width="0.6"><title>node 19: (3369, 1928) cost 1420</title></circle>
+<circle cx="399.5" cy="430.5" r="7.2" fill="rgb(172,67,18)" stroke="#222" stroke-width="0.6"><title>node 20: (2508, 208) cost 1389</title></circle>
+<circle cx="615.0" cy="236.6" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 21 (unused): (3926, 1484) cost 1337</title></circle>
+<circle cx="259.1" cy="452.7" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 22 (unused): (1584, 62) cost 1560</title></circle>
+<circle cx="173.2" cy="347.4" r="8.5" fill="rgb(146,20,5)" stroke="#222" stroke-width="0.6"><title>node 23: (1019, 755) cost 1815</title></circle>
+<circle cx="493.3" cy="179.8" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 24 (unused): (3125, 1858) cost 1312</title></circle>
+<circle cx="278.7" cy="451.9" r="6.2" fill="rgb(192,104,28)" stroke="#222" stroke-width="0.6"><title>node 25: (1713, 67) cost 1051</title></circle>
+<circle cx="620.0" cy="437.5" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 26 (unused): (3959, 162) cost 1320</title></circle>
+<circle cx="238.2" cy="401.0" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 27 (unused): (1447, 402) cost 1405</title></circle>
+<circle cx="233.4" cy="341.2" r="5.2" fill="rgb(210,138,38)" stroke="#222" stroke-width="0.6"><title>node 28: (1415, 796) cost 741</title></circle>
+<circle cx="548.0" cy="167.9" r="4.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 29 (unused): (3485, 1936) cost 494</title></circle>
+<circle cx="166.0" cy="367.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 30: (972, 623) cost 347</title></circle>
+<circle cx="32.9" cy="176.6" r="4.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 31 (unused): (96, 1879) cost 634</title></circle>
+<circle cx="152.4" cy="439.0" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 32 (unused): (882, 152) cost 1627</title></circle>
+<circle cx="379.1" cy="288.4" r="3.7" fill="rgb(240,193,53)" stroke="#222" stroke-width="0.6"><title>node 33: (2374, 1143) cost 248</title></circle>
+<circle cx="412.7" cy="215.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 34 (unused): (2595, 1621) cost 1527</title></circle>
+<circle cx="258.9" cy="315.3" r="4.1" fill="rgb(232,178,49)" stroke="#222" stroke-width="0.6"><title>node 35: (1583, 966) cost 382</title></circle>
+<circle cx="363.5" cy="325.8" r="3.3" fill="rgb(249,209,57)" stroke="#222" stroke-width="0.6"><title>node 36: (2271, 897) cost 98</title></circle>
+<circle cx="612.9" cy="304.2" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 37 (unused): (3912, 1039) cost 1051</title></circle>
+<circle cx="145.4" cy="235.5" r="5.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 38 (unused): (836, 1491) cost 961</title></circle>
+<circle cx="365.3" cy="161.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 39 (unused): (2283, 1976) cost 903</title></circle>
+<circle cx="169.7" cy="392.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 40 (unused): (996, 459) cost 1813</title></circle>
+<circle cx="339.1" cy="367.0" r="6.2" fill="rgb(192,104,28)" stroke="#222" stroke-width="0.6"><title>node 41: (2111, 626) cost 1056</title></circle>
+<circle cx="508.4" cy="392.5" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 42 (unused): (3225, 458) cost 870</title></circle>
+<circle cx="513.8" cy="363.8" r="6.3" fill="rgb(189,99,27)" stroke="#222" stroke-width="0.6"><title>node 43: (3260, 647) cost 1098</title></circle>
+<circle cx="146.6" cy="277.5" r="8.0" fill="rgb(155,37,10)" stroke="#222" stroke-width="0.6"><title>node 44: (844, 1215) cost 1659</title></circle>
+<circle cx="290.5" cy="369.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 45: (1791, 607) cost 491</title></circle>
+<circle cx="578.4" cy="223.7" r="7.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 46 (unused): (3685, 1569) cost 1465</title></circle>
+<circle cx="591.3" cy="311.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 47: (3770, 992) cost 291</title></circle>
+<circle cx="56.3" cy="169.9" r="3.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 48 (unused): (250, 1923) cost 219</title></circle>
+<circle cx="69.7" cy="297.4" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 49: (338, 1084) cost 573</title></circle>
+<circle cx="538.7" cy="292.7" r="3.6" fill="rgb(244,200,54)" stroke="#222" stroke-width="0.6"><title>node 50: (3424, 1115) cost 186</title></circle>
+<circle cx="269.8" cy="277.0" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 51: (1655, 1218) cost 196</title></circle>
+<circle cx="332.6" cy="310.6" r="4.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 52 (unused): (2068, 997) cost 570</title></circle>
+<circle cx="326.1" cy="340.5" r="4.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 53 (unused): (2025, 800) cost 403</title></circle>
+<circle cx="406.2" cy="296.5" r="4.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 54 (unused): (2552, 1090) cost 583</title></circle>
+<circle cx="590.7" cy="177.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 55 (unused): (3766, 1871) cost 887</title></circle>
+<circle cx="483.5" cy="214.0" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 56 (unused): (3061, 1633) cost 1762</title></circle>
+<circle cx="508.1" cy="454.2" r="3.4" fill="rgb(247,206,56)" stroke="#222" stroke-width="0.6"><title>node 57: (3223, 52) cost 126</title></circle>
+<circle cx="377.4" cy="403.8" r="3.7" fill="rgb(242,195,53)" stroke="#222" stroke-width="0.6"><title>node 58: (2363, 384) cost 223</title></circle>
+<circle cx="544.2" cy="248.9" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 59 (unused): (3460, 1403) cost 1152</title></circle>
+<circle cx="51.9" cy="263.6" r="4.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 60 (unused): (221, 1306) cost 533</title></circle>
+<circle cx="325.5" cy="383.6" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 61 (unused): (2021, 517) cost 1224</title></circle>
+<circle cx="377.1" cy="233.6" r="5.8" fill="rgb(199,118,32)" stroke="#222" stroke-width="0.6"><title>node 62: (2361, 1504) cost 927</title></circle>
+<circle cx="37.0" cy="296.9" r="3.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 63 (unused): (123, 1087) cost 27</title></circle>
+<circle cx="550.5" cy="455.3" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 64 (unused): (3502, 45) cost 859</title></circle>
+<circle cx="430.2" cy="400.0" r="6.9" fill="rgb(178,78,21)" stroke="#222" stroke-width="0.6"><title>node 65: (2710, 409) cost 1286</title></circle>
+<circle cx="99.0" cy="246.2" r="7.7" fill="rgb(162,49,13)" stroke="#222" stroke-width="0.6"><title>node 66: (531, 1421) cost 1554</title></circle>
+<circle cx="297.2" cy="319.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 67: (1835, 936) cost 29</title></circle>
+<circle cx="156.0" cy="289.9" r="8.9" fill="rgb(137,4,1)" stroke="#222" stroke-width="0.6"><title>node 68: (906, 1133) cost 1965</title></circle>
+<circle cx="64.1" cy="426.9" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 69: (301, 232) cost 724</title></circle>
+<circle cx="254.8" cy="403.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 70 (unused): (1556, 385) cost 1602</title></circle>
+<circle cx="194.5" cy="212.6" r="5.2" fill="rgb(211,139,38)" stroke="#222" stroke-width="0.6"><title>node 71: (1159, 1642) cost 739</title></circle>
+<circle cx="441.6" cy="368.8" r="6.1" fill="rgb(194,108,29)" stroke="#222" stroke-width="0.6"><title>node 72: (2785, 614) cost 1018</title></circle>
+<circle cx="318.0" cy="383.3" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 73 (unused): (1972, 519) cost 781</title></circle>
+<circle cx="342.8" cy="293.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 74 (unused): (2135, 1108) cost 1975</title></circle>
+<circle cx="606.8" cy="426.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 75 (unused): (3872, 238) cost 1160</title></circle>
+<circle cx="187.2" cy="263.0" r="4.3" fill="rgb(229,173,47)" stroke="#222" stroke-width="0.6"><title>node 76: (1111, 1310) cost 426</title></circle>
+<circle cx="20.0" cy="187.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 77 (unused): (11, 1807) cost 1394</title></circle>
+<circle cx="611.3" cy="456.0" r="5.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 78 (unused): (3902, 40) cost 667</title></circle>
+<circle cx="547.7" cy="168.1" r="8.8" fill="rgb(138,6,2)" stroke="#222" stroke-width="0.6"><title>node 79: (3483, 1935) cost 1943</title></circle>
+<circle cx="111.0" cy="217.1" r="3.1" fill="rgb(254,218,59)" stroke="#222" stroke-width="0.6"><title>node 80: (610, 1612) cost 21</title></circle>
+<circle cx="499.3" cy="326.6" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 81 (unused): (3165, 892) cost 1172</title></circle>
+<circle cx="51.2" cy="261.1" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 82 (unused): (216, 1323) cost 1287</title></circle>
+<circle cx="131.1" cy="306.0" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 83 (unused): (742, 1027) cost 997</title></circle>
+<circle cx="381.2" cy="381.0" r="4.4" fill="rgb(226,167,46)" stroke="#222" stroke-width="0.6"><title>node 84: (2388, 534) cost 477</title></circle>
+<circle cx="491.1" cy="296.6" r="5.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 85 (unused): (3111, 1089) cost 838</title></circle>
+<circle cx="578.5" cy="198.9" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 86 (unused): (3686, 1732) cost 1833</title></circle>
+<circle cx="239.5" cy="374.7" r="4.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 87 (unused): (1455, 575) cost 407</title></circle>
+<circle cx="590.1" cy="447.7" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 88 (unused): (3762, 95) cost 765</title></circle>
+<circle cx="514.8" cy="391.2" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 89: (3267, 467) cost 240</title></circle>
+<circle cx="147.1" cy="298.4" r="5.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 90 (unused): (847, 1077) cost 958</title></circle>
+<circle cx="151.3" cy="204.8" r="4.7" fill="rgb(220,156,43)" stroke="#222" stroke-width="0.6"><title>node 91: (875, 1693) cost 582</title></circle>
+<circle cx="130.6" cy="433.7" r="6.4" fill="rgb(188,97,26)" stroke="#222" stroke-width="0.6"><title>node 92: (739, 187) cost 1116</title></circle>
+<circle cx="533.2" cy="326.3" r="3.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 93 (unused): (3388, 894) cost 138</title></circle>
+<circle cx="63.2" cy="430.5" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 94 (unused): (295, 208) cost 1568</title></circle>
+<circle cx="70.8" cy="380.2" r="6.3" fill="rgb(190,100,27)" stroke="#222" stroke-width="0.6"><title>node 95: (345, 539) cost 1085</title></circle>
+<circle cx="235.8" cy="403.3" r="7.5" fill="rgb(165,56,15)" stroke="#222" stroke-width="0.6"><title>node 96: (1431, 387) cost 1490</title></circle>
+<circle cx="77.9" cy="378.4" r="3.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 97 (unused): (392, 551) cost 196</title></circle>
+<circle cx="261.2" cy="415.6" r="5.7" fill="rgb(202,122,33)" stroke="#222" stroke-width="0.6"><title>node 98: (1598, 306) cost 887</title></circle>
+<circle cx="373.8" cy="344.5" r="6.3" fill="rgb(190,100,27)" stroke="#222" stroke-width="0.6"><title>node 99: (2339, 774) cost 1088</title></circle>
+<circle cx="133.7" cy="281.1" r="5.9" fill="rgb(198,115,31)" stroke="#222" stroke-width="0.6"><title>node 100: (759, 1191) cost 949</title></circle>
+<circle cx="566.2" cy="201.2" r="5.5" fill="rgb(204,127,35)" stroke="#222" stroke-width="0.6"><title>node 101: (3605, 1717) cost 844</title></circle>
+<circle cx="251.0" cy="346.0" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 102 (unused): (1531, 764) cost 1003</title></circle>
+<circle cx="529.1" cy="395.3" r="7.0" fill="rgb(174,72,20)" stroke="#222" stroke-width="0.6"><title>node 103: (3361, 440) cost 1341</title></circle>
+<circle cx="28.1" cy="457.7" r="5.2" fill="rgb(212,141,38)" stroke="#222" stroke-width="0.6"><title>node 104: (64, 29) cost 721</title></circle>
+<circle cx="490.5" cy="440.1" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 105 (unused): (3107, 145) cost 1905</title></circle>
+<circle cx="502.4" cy="369.6" r="3.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 106 (unused): (3185, 609) cost 144</title></circle>
+<circle cx="568.2" cy="417.3" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 107: (3618, 295) cost 4</title></circle>
+<circle cx="83.5" cy="266.5" r="5.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 108 (unused): (429, 1287) cost 678</title></circle>
+<circle cx="436.1" cy="223.2" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 109 (unused): (2749, 1572) cost 1851</title></circle>
+<circle cx="74.3" cy="439.8" r="7.6" fill="rgb(163,51,14)" stroke="#222" stroke-width="0.6"><title>node 110: (368, 147) cost 1538</title></circle>
+<circle cx="442.2" cy="452.9" r="6.1" fill="rgb(193,106,29)" stroke="#222" stroke-width="0.6"><title>node 111: (2789, 61) cost 1031</title></circle>
+<circle cx="283.8" cy="209.5" r="5.3" fill="rgb(208,134,37)" stroke="#222" stroke-width="0.6"><title>node 112: (1747, 1662) cost 782</title></circle>
+<circle cx="527.3" cy="377.6" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 113 (unused): (3349, 556) cost 916</title></circle>
+<circle cx="305.7" cy="460.0" r="4.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 114 (unused): (1891, 14) cost 500</title></circle>
+<circle cx="283.4" cy="172.0" r="5.3" fill="rgb(210,137,37)" stroke="#222" stroke-width="0.6"><title>node 115: (1744, 1909) cost 750</title></circle>
+<circle cx="20.9" cy="285.7" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 116: (17, 1161) cost 539</title></circle>
+<circle cx="549.0" cy="359.5" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 117 (unused): (3492, 675) cost 1638</title></circle>
+<circle cx="333.5" cy="455.9" r="9.0" fill="rgb(135,0,0)" stroke="#222" stroke-width="0.6"><title>node 118: (2074, 41) cost 1997</title></circle>
+<circle cx="37.5" cy="312.1" r="6.6" fill="rgb(183,89,24)" stroke="#222" stroke-width="0.6"><title>node 119: (126, 987) cost 1192</title></circle>
+<circle cx="97.7" cy="404.2" r="7.7" fill="rgb(160,46,13)" stroke="#222" stroke-width="0.6"><title>node 120: (522, 381) cost 1577</title></circle>
+<circle cx="309.8" cy="401.6" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 121 (unused): (1918, 398) cost 1531</title></circle>
+<circle cx="587.5" cy="444.8" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 122 (unused): (3745, 114) cost 1703</title></circle>
+<circle cx="129.4" cy="300.9" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 123: (731, 1061) cost 226</title></circle>
+<circle cx="524.6" cy="420.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 124 (unused): (3331, 274) cost 1676</title></circle>
+<circle cx="133.1" cy="390.1" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 125 (unused): (755, 474) cost 1988</title></circle>
+<circle cx="87.2" cy="171.7" r="8.9" fill="rgb(138,5,1)" stroke="#222" stroke-width="0.6"><title>node 126: (453, 1911) cost 1953</title></circle>
+<circle cx="77.0" cy="387.4" r="4.8" fill="rgb(219,155,42)" stroke="#222" stroke-width="0.6"><title>node 127: (386, 492) cost 592</title></circle>
+<circle cx="505.4" cy="286.3" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 128 (unused): (3205, 1157) cost 1754</title></circle>
+<circle cx="28.2" cy="449.1" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 129 (unused): (65, 86) cost 758</title></circle>
+<circle cx="579.1" cy="376.1" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 130: (3690, 566) cost 386</title></circle>
+<circle cx="381.4" cy="332.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 131: (2389, 852) cost 636</title></circle>
+<circle cx="176.8" cy="275.0" r="3.2" fill="rgb(251,212,58)" stroke="#222" stroke-width="0.6"><title>node 132: (1043, 1231) cost 71</title></circle>
+<circle cx="275.5" cy="256.8" r="7.3" fill="rgb(170,63,17)" stroke="#222" stroke-width="0.6"><title>node 133: (1692, 1351) cost 1422</title></circle>
+<circle cx="411.8" cy="382.8" r="3.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 134 (unused): (2589, 522) cost 236</title></circle>
+<circle cx="321.8" cy="402.2" r="3.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 135 (unused): (1997, 394) cost 110</title></circle>
+<circle cx="463.8" cy="176.4" r="4.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 136 (unused): (2931, 1880) cost 497</title></circle>
+<circle cx="116.2" cy="192.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 137 (unused): (644, 1775) cost 1785</title></circle>
+<circle cx="454.7" cy="421.1" r="6.0" fill="rgb(196,111,30)" stroke="#222" stroke-width="0.6"><title>node 138: (2871, 270) cost 985</title></circle>
+<circle cx="279.9" cy="224.3" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 139 (unused): (1721, 1565) cost 857</title></circle>
+<circle cx="323.0" cy="353.2" r="4.8" fill="rgb(219,154,42)" stroke="#222" stroke-width="0.6"><title>node 140: (2005, 717) cost 598</title></circle>
+<circle cx="204.5" cy="371.4" r="3.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 141 (unused): (1225, 597) cost 61</title></circle>
+<circle cx="470.2" cy="285.7" r="6.1" fill="rgb(193,107,29)" stroke="#222" stroke-width="0.6"><title>node 142: (2973, 1161) cost 1029</title></circle>
+<circle cx="363.5" cy="265.5" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 143 (unused): (2271, 1294) cost 921</title></circle>
+<circle cx="311.0" cy="324.1" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 144: (1926, 908) cost 335</title></circle>
+<circle cx="199.6" cy="364.3" r="7.5" fill="rgb(166,56,15)" stroke="#222" stroke-width="0.6"><title>node 145: (1193, 644) cost 1486</title></circle>
+<circle cx="609.4" cy="400.0" r="5.7" fill="rgb(202,122,33)" stroke="#222" stroke-width="0.6"><title>node 146: (3889, 409) cost 889</title></circle>
+<circle cx="616.5" cy="264.0" r="4.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 147 (unused): (3936, 1304) cost 536</title></circle>
+<circle cx="143.9" cy="311.5" r="7.1" fill="rgb(173,70,19)" stroke="#222" stroke-width="0.6"><title>node 148: (826, 991) cost 1363</title></circle>
+<circle cx="32.0" cy="289.0" r="3.4" fill="rgb(248,206,56)" stroke="#222" stroke-width="0.6"><title>node 149: (90, 1139) cost 124</title></circle>
+<circle cx="484.9" cy="372.5" r="4.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 150 (unused): (3070, 590) cost 628</title></circle>
+<circle cx="483.7" cy="396.3" r="4.9" fill="rgb(218,152,41)" stroke="#222" stroke-width="0.6"><title>node 151: (3062, 433) cost 621</title></circle>
+<circle cx="101.3" cy="275.3" r="4.3" fill="rgb(228,171,47)" stroke="#222" stroke-width="0.6"><title>node 152: (546, 1229) cost 446</title></circle>
+<circle cx="604.7" cy="441.6" r="5.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 153 (unused): (3858, 135) cost 665</title></circle>
+<circle cx="384.3" cy="174.6" r="6.2" fill="rgb(192,104,28)" stroke="#222" stroke-width="0.6"><title>node 154: (2408, 1892) cost 1051</title></circle>
+<circle cx="582.6" cy="231.1" r="8.2" fill="rgb(150,28,8)" stroke="#222" stroke-width="0.6"><title>node 155: (3713, 1520) cost 1747</title></circle>
+<circle cx="250.2" cy="315.6" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 156 (unused): (1526, 964) cost 985</title></circle>
+<circle cx="192.3" cy="198.4" r="4.1" fill="rgb(233,180,49)" stroke="#222" stroke-width="0.6"><title>node 157: (1145, 1735) cost 360</title></circle>
+<circle cx="411.3" cy="431.0" r="4.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 158 (unused): (2586, 205) cost 567</title></circle>
+<circle cx="607.7" cy="385.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 159: (3878, 505) cost 291</title></circle>
+<circle cx="123.5" cy="314.4" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 160: (692, 972) cost 909</title></circle>
+<circle cx="133.5" cy="386.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 161 (unused): (758, 497) cost 914</title></circle>
+<circle cx="168.0" cy="306.8" r="6.8" fill="rgb(180,82,22)" stroke="#222" stroke-width="0.6"><title>node 162: (985, 1022) cost 1250</title></circle>
+<circle cx="507.4" cy="165.9" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 163 (unused): (3218, 1949) cost 1049</title></circle>
+<circle cx="472.0" cy="253.3" r="3.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 164 (unused): (2985, 1374) cost 37</title></circle>
+<circle cx="470.6" cy="420.2" r="8.7" fill="rgb(142,12,3)" stroke="#222" stroke-width="0.6"><title>node 165: (2976, 276) cost 1887</title></circle>
+<circle cx="187.9" cy="429.9" r="8.4" fill="rgb(148,23,6)" stroke="#222" stroke-width="0.6"><title>node 166: (1116, 212) cost 1785</title></circle>
+<circle cx="55.7" cy="279.6" r="8.8" fill="rgb(138,6,2)" stroke="#222" stroke-width="0.6"><title>node 167: (246, 1201) cost 1939</title></circle>
+<circle cx="25.6" cy="324.7" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 168: (48, 904) cost 346</title></circle>
+<circle cx="537.9" cy="272.8" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 169: (3419, 1246) cost 998</title></circle>
+<circle cx="610.4" cy="401.9" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 170 (unused): (3896, 396) cost 872</title></circle>
+<circle cx="155.3" cy="436.3" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 171: (901, 170) cost 497</title></circle>
+<circle cx="249.6" cy="308.2" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 172 (unused): (1522, 1013) cost 1737</title></circle>
+<circle cx="257.1" cy="264.4" r="8.4" fill="rgb(146,21,6)" stroke="#222" stroke-width="0.6"><title>node 173: (1571, 1301) cost 1808</title></circle>
+<circle cx="454.5" cy="335.2" r="3.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 174 (unused): (2870, 835) cost 221</title></circle>
+<circle cx="311.5" cy="165.8" r="6.5" fill="rgb(185,92,25)" stroke="#222" stroke-width="0.6"><title>node 175: (1929, 1950) cost 1160</title></circle>
+<circle cx="452.2" cy="363.8" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 176: (2855, 647) cost 332</title></circle>
+<circle cx="349.6" cy="327.3" r="3.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 177 (unused): (2180, 887) cost 53</title></circle>
+<circle cx="526.1" cy="205.4" r="4.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 178 (unused): (3341, 1689) cost 346</title></circle>
+<circle cx="333.1" cy="328.8" r="5.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 179 (unused): (2071, 877) cost 723</title></circle>
+<circle cx="214.8" cy="331.4" r="3.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 180 (unused): (1293, 860) cost 0</title></circle>
+<circle cx="343.9" cy="442.5" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 181: (2142, 129) cost 724</title></circle>
+<circle cx="474.0" cy="443.6" r="5.1" fill="rgb(213,143,39)" stroke="#222" stroke-width="0.6"><title>node 182: (2998, 122) cost 698</title></circle>
+<circle cx="200.5" cy="439.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 183 (unused): (1199, 148) cost 1677</title></circle>
+<circle cx="491.3" cy="209.1" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 184 (unused): (3112, 1665) cost 941</title></circle>
+<circle cx="269.7" cy="338.9" r="5.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 185 (unused): (1654, 811) cost 675</title></circle>
+<circle cx="440.8" cy="200.3" r="5.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 186 (unused): (2780, 1723) cost 783</title></circle>
+<circle cx="173.8" cy="391.3" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 187: (1023, 466) cost 67</title></circle>
+<circle cx="40.7" cy="402.1" r="8.4" fill="rgb(146,20,6)" stroke="#222" stroke-width="0.6"><title>node 188: (147, 395) cost 1811</title></circle>
+<circle cx="192.5" cy="410.9" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 189 (unused): (1146, 337) cost 910</title></circle>
+<circle cx="308.4" cy="264.4" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 190 (unused): (1909, 1301) cost 1689</title></circle>
+<circle cx="205.6" cy="342.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 191 (unused): (1232, 789) cost 1896</title></circle>
+<circle cx="394.3" cy="453.0" r="5.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 192 (unused): (2474, 60) cost 667</title></circle>
+<circle cx="608.1" cy="446.8" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 193 (unused): (3881, 101) cost 854</title></circle>
+<circle cx="441.9" cy="301.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 194 (unused): (2787, 1060) cost 1168</title></circle>
+<circle cx="476.2" cy="197.8" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 195 (unused): (3013, 1739) cost 1973</title></circle>
+<circle cx="249.2" cy="262.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 196 (unused): (1519, 1315) cost 1347</title></circle>
+<circle cx="484.6" cy="160.5" r="8.6" fill="rgb(143,14,4)" stroke="#222" stroke-width="0.6"><title>node 197: (3068, 1985) cost 1868</title></circle>
+<circle cx="162.1" cy="417.6" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 198 (unused): (946, 293) cost 1976</title></circle>
+<circle cx="34.3" cy="169.9" r="7.8" fill="rgb(158,43,12)" stroke="#222" stroke-width="0.6"><title>node 199: (105, 1923) cost 1608</title></circle>
+<circle cx="290.5" cy="369.9" r="11" fill="none" stroke="#3b6ea5" stroke-width="2"><title>start: node 45</title></circle></svg><div class="legend"><span class="bar"></span> node cost 0 &rarr; 1997 (colour and size) &middot; hollow grey = not selected &middot; ring = first node</div>
+  <h3>Best solution (node indices, from 0)</h3>
+  <pre>45, 43, 112, 35, 138, 13, 116, 152, 155, 148, 62, 127, 182, 199, 126, 145, 49, 101, 131, 96, 159, 169, 151, 9, 157, 10, 72, 149, 154, 79, 120, 44, 115, 140, 197, 99, 30, 133, 47, 20, 175, 41, 142, 65, 176, 50, 132, 119, 4, 76, 92, 69, 25, 181, 2, 1, 80, 7, 173, 5, 51, 100, 162, 111, 14, 67, 168, 15, 144, 95, 36, 103, 146, 68, 167, 23, 71, 171, 118, 28, 89, 33, 110, 165, 107, 130, 19, 160, 57, 58, 166, 98, 123, 18, 91, 104, 188, 187, 84, 66</pre>
+  <h3>Solution checker</h3>
+  <p><span class="ok">&#10004; checked</span>: 100 distinct nodes, all indices valid.</p>
+</section>
+<section>
+  <h2>TSPA &mdash; Nearest neighbor (end)</h2>
+  <p>Best of 200 valid runs: run #54 with objective <b>84362</b>.</p>
+  <svg viewBox="0 0 640 480" class="plot" role="img" aria-label="Best solution plot">
+<polygon points="406.2,296.5 406.2,290.9 379.1,288.4 363.5,325.8 349.6,327.3 297.2,319.9 311.0,324.1 326.1,340.5 321.8,402.2 377.4,403.8 411.8,382.8 452.2,363.8 454.5,335.2 502.4,369.6 514.8,391.2 568.2,417.3 508.1,454.2 474.0,443.6 483.7,396.3 533.2,326.3 538.7,292.7 529.4,289.5 536.4,263.8 472.0,253.3 526.1,205.4 548.0,167.9 463.8,176.4 440.8,200.3 491.3,209.1 591.3,311.4 607.7,385.4 579.1,376.1 604.7,441.6 611.3,456.0 590.1,447.7 608.1,446.8 610.4,401.9 609.4,400.0 606.8,426.0 550.5,455.3 484.9,372.5 508.4,392.5 527.3,377.6 513.8,363.8 491.1,296.6 470.2,285.7 442.6,301.3 381.4,332.6 381.2,381.0 411.3,431.0 394.3,453.0 343.9,442.5 305.7,460.0 204.5,371.4 214.8,331.4 176.8,275.0 187.2,263.0 111.0,217.1 56.3,169.9 32.9,176.6 37.0,296.9 32.0,289.0 25.6,324.7 77.9,378.4 77.0,387.4 173.8,391.3 166.0,367.4 129.4,300.9 101.3,275.3 83.5,266.5 51.9,263.6 20.9,285.7 69.7,297.4 53.3,298.0 37.5,312.1 123.5,314.4 131.1,306.0 147.1,298.4 269.8,277.0 273.8,280.7 258.9,315.3 239.5,374.7 290.5,369.9 323.0,353.2 332.6,310.6 333.1,328.8 269.7,338.9 233.4,341.2 251.0,346.0 250.2,315.6 192.3,198.4 194.5,212.6 151.3,204.8 145.4,235.5 133.7,281.1 205.9,243.9 283.8,209.5 279.9,224.3 283.4,172.0 287.8,189.0" fill="none" stroke="#3b6ea5" stroke-width="1.4"/>
+<circle cx="465.7" cy="386.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 0 (unused): (2944, 497) cost 1607</title></circle>
+<circle cx="536.4" cy="263.8" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 1: (3409, 1305) cost 225</title></circle>
+<circle cx="164.8" cy="433.9" r="4.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 2 (unused): (964, 186) cost 387</title></circle>
+<circle cx="529.4" cy="289.5" r="4.0" fill="rgb(235,184,50)" stroke="#222" stroke-width="0.6"><title>node 3: (3363, 1136) cost 327</title></circle>
+<circle cx="205.9" cy="243.9" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 4: (1234, 1436) cost 864</title></circle>
+<circle cx="287.8" cy="189.0" r="6.6" fill="rgb(184,89,24)" stroke="#222" stroke-width="0.6"><title>node 5: (1773, 1797) cost 1188</title></circle>
+<circle cx="601.5" cy="239.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 6 (unused): (3837, 1462) cost 1598</title></circle>
+<circle cx="47.8" cy="168.8" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 7 (unused): (194, 1930) cost 1402</title></circle>
+<circle cx="442.6" cy="301.3" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 8: (2792, 1058) cost 873</title></circle>
+<circle cx="406.2" cy="290.9" r="4.2" fill="rgb(232,178,48)" stroke="#222" stroke-width="0.6"><title>node 9: (2552, 1127) cost 383</title></circle>
+<circle cx="219.4" cy="431.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 10 (unused): (1323, 205) cost 1181</title></circle>
+<circle cx="53.3" cy="298.0" r="6.2" fill="rgb(191,103,28)" stroke="#222" stroke-width="0.6"><title>node 11: (230, 1080) cost 1059</title></circle>
+<circle cx="125.8" cy="329.1" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 12 (unused): (707, 875) cost 1765</title></circle>
+<circle cx="425.9" cy="392.4" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 13 (unused): (2682, 459) cost 1670</title></circle>
+<circle cx="136.3" cy="262.9" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 14 (unused): (776, 1311) cost 1756</title></circle>
+<circle cx="389.5" cy="232.5" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 15 (unused): (2442, 1511) cost 1505</title></circle>
+<circle cx="273.8" cy="280.7" r="4.2" fill="rgb(230,174,48)" stroke="#222" stroke-width="0.6"><title>node 16: (1681, 1194) cost 416</title></circle>
+<circle cx="567.4" cy="178.2" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 17 (unused): (3613, 1868) cost 1224</title></circle>
+<circle cx="246.9" cy="231.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 18 (unused): (1504, 1517) cost 1650</title></circle>
+<circle cx="530.3" cy="169.1" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 19 (unused): (3369, 1928) cost 1420</title></circle>
+<circle cx="399.5" cy="430.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 20 (unused): (2508, 208) cost 1389</title></circle>
+<circle cx="615.0" cy="236.6" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 21 (unused): (3926, 1484) cost 1337</title></circle>
+<circle cx="259.1" cy="452.7" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 22 (unused): (1584, 62) cost 1560</title></circle>
+<circle cx="173.2" cy="347.4" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 23 (unused): (1019, 755) cost 1815</title></circle>
+<circle cx="493.3" cy="179.8" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 24 (unused): (3125, 1858) cost 1312</title></circle>
+<circle cx="278.7" cy="451.9" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 25 (unused): (1713, 67) cost 1051</title></circle>
+<circle cx="620.0" cy="437.5" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 26 (unused): (3959, 162) cost 1320</title></circle>
+<circle cx="238.2" cy="401.0" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 27 (unused): (1447, 402) cost 1405</title></circle>
+<circle cx="233.4" cy="341.2" r="5.2" fill="rgb(210,138,38)" stroke="#222" stroke-width="0.6"><title>node 28: (1415, 796) cost 741</title></circle>
+<circle cx="548.0" cy="167.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 29: (3485, 1936) cost 494</title></circle>
+<circle cx="166.0" cy="367.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 30: (972, 623) cost 347</title></circle>
+<circle cx="32.9" cy="176.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 31: (96, 1879) cost 634</title></circle>
+<circle cx="152.4" cy="439.0" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 32 (unused): (882, 152) cost 1627</title></circle>
+<circle cx="379.1" cy="288.4" r="3.7" fill="rgb(240,193,53)" stroke="#222" stroke-width="0.6"><title>node 33: (2374, 1143) cost 248</title></circle>
+<circle cx="412.7" cy="215.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 34 (unused): (2595, 1621) cost 1527</title></circle>
+<circle cx="258.9" cy="315.3" r="4.1" fill="rgb(232,178,49)" stroke="#222" stroke-width="0.6"><title>node 35: (1583, 966) cost 382</title></circle>
+<circle cx="363.5" cy="325.8" r="3.3" fill="rgb(249,209,57)" stroke="#222" stroke-width="0.6"><title>node 36: (2271, 897) cost 98</title></circle>
+<circle cx="612.9" cy="304.2" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 37 (unused): (3912, 1039) cost 1051</title></circle>
+<circle cx="145.4" cy="235.5" r="5.9" fill="rgb(197,114,31)" stroke="#222" stroke-width="0.6"><title>node 38: (836, 1491) cost 961</title></circle>
+<circle cx="365.3" cy="161.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 39 (unused): (2283, 1976) cost 903</title></circle>
+<circle cx="169.7" cy="392.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 40 (unused): (996, 459) cost 1813</title></circle>
+<circle cx="339.1" cy="367.0" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 41 (unused): (2111, 626) cost 1056</title></circle>
+<circle cx="508.4" cy="392.5" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 42: (3225, 458) cost 870</title></circle>
+<circle cx="513.8" cy="363.8" r="6.3" fill="rgb(189,99,27)" stroke="#222" stroke-width="0.6"><title>node 43: (3260, 647) cost 1098</title></circle>
+<circle cx="146.6" cy="277.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 44 (unused): (844, 1215) cost 1659</title></circle>
+<circle cx="290.5" cy="369.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 45: (1791, 607) cost 491</title></circle>
+<circle cx="578.4" cy="223.7" r="7.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 46 (unused): (3685, 1569) cost 1465</title></circle>
+<circle cx="591.3" cy="311.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 47: (3770, 992) cost 291</title></circle>
+<circle cx="56.3" cy="169.9" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 48: (250, 1923) cost 219</title></circle>
+<circle cx="69.7" cy="297.4" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 49: (338, 1084) cost 573</title></circle>
+<circle cx="538.7" cy="292.7" r="3.6" fill="rgb(244,200,54)" stroke="#222" stroke-width="0.6"><title>node 50: (3424, 1115) cost 186</title></circle>
+<circle cx="269.8" cy="277.0" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 51: (1655, 1218) cost 196</title></circle>
+<circle cx="332.6" cy="310.6" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 52: (2068, 997) cost 570</title></circle>
+<circle cx="326.1" cy="340.5" r="4.2" fill="rgb(231,176,48)" stroke="#222" stroke-width="0.6"><title>node 53: (2025, 800) cost 403</title></circle>
+<circle cx="406.2" cy="296.5" r="4.8" fill="rgb(220,156,42)" stroke="#222" stroke-width="0.6"><title>node 54: (2552, 1090) cost 583</title></circle>
+<circle cx="590.7" cy="177.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 55 (unused): (3766, 1871) cost 887</title></circle>
+<circle cx="483.5" cy="214.0" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 56 (unused): (3061, 1633) cost 1762</title></circle>
+<circle cx="508.1" cy="454.2" r="3.4" fill="rgb(247,206,56)" stroke="#222" stroke-width="0.6"><title>node 57: (3223, 52) cost 126</title></circle>
+<circle cx="377.4" cy="403.8" r="3.7" fill="rgb(242,195,53)" stroke="#222" stroke-width="0.6"><title>node 58: (2363, 384) cost 223</title></circle>
+<circle cx="544.2" cy="248.9" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 59 (unused): (3460, 1403) cost 1152</title></circle>
+<circle cx="51.9" cy="263.6" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 60: (221, 1306) cost 533</title></circle>
+<circle cx="325.5" cy="383.6" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 61 (unused): (2021, 517) cost 1224</title></circle>
+<circle cx="377.1" cy="233.6" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 62 (unused): (2361, 1504) cost 927</title></circle>
+<circle cx="37.0" cy="296.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 63: (123, 1087) cost 27</title></circle>
+<circle cx="550.5" cy="455.3" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 64: (3502, 45) cost 859</title></circle>
+<circle cx="430.2" cy="400.0" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 65 (unused): (2710, 409) cost 1286</title></circle>
+<circle cx="99.0" cy="246.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 66 (unused): (531, 1421) cost 1554</title></circle>
+<circle cx="297.2" cy="319.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 67: (1835, 936) cost 29</title></circle>
+<circle cx="156.0" cy="289.9" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 68 (unused): (906, 1133) cost 1965</title></circle>
+<circle cx="64.1" cy="426.9" r="5.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 69 (unused): (301, 232) cost 724</title></circle>
+<circle cx="254.8" cy="403.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 70 (unused): (1556, 385) cost 1602</title></circle>
+<circle cx="194.5" cy="212.6" r="5.2" fill="rgb(211,139,38)" stroke="#222" stroke-width="0.6"><title>node 71: (1159, 1642) cost 739</title></circle>
+<circle cx="441.6" cy="368.8" r="6.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 72 (unused): (2785, 614) cost 1018</title></circle>
+<circle cx="318.0" cy="383.3" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 73 (unused): (1972, 519) cost 781</title></circle>
+<circle cx="342.8" cy="293.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 74 (unused): (2135, 1108) cost 1975</title></circle>
+<circle cx="606.8" cy="426.0" r="6.5" fill="rgb(185,92,25)" stroke="#222" stroke-width="0.6"><title>node 75: (3872, 238) cost 1160</title></circle>
+<circle cx="187.2" cy="263.0" r="4.3" fill="rgb(229,173,47)" stroke="#222" stroke-width="0.6"><title>node 76: (1111, 1310) cost 426</title></circle>
+<circle cx="20.0" cy="187.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 77 (unused): (11, 1807) cost 1394</title></circle>
+<circle cx="611.3" cy="456.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 78: (3902, 40) cost 667</title></circle>
+<circle cx="547.7" cy="168.1" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 79 (unused): (3483, 1935) cost 1943</title></circle>
+<circle cx="111.0" cy="217.1" r="3.1" fill="rgb(254,218,59)" stroke="#222" stroke-width="0.6"><title>node 80: (610, 1612) cost 21</title></circle>
+<circle cx="499.3" cy="326.6" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 81 (unused): (3165, 892) cost 1172</title></circle>
+<circle cx="51.2" cy="261.1" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 82 (unused): (216, 1323) cost 1287</title></circle>
+<circle cx="131.1" cy="306.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 83: (742, 1027) cost 997</title></circle>
+<circle cx="381.2" cy="381.0" r="4.4" fill="rgb(226,167,46)" stroke="#222" stroke-width="0.6"><title>node 84: (2388, 534) cost 477</title></circle>
+<circle cx="491.1" cy="296.6" r="5.5" fill="rgb(205,128,35)" stroke="#222" stroke-width="0.6"><title>node 85: (3111, 1089) cost 838</title></circle>
+<circle cx="578.5" cy="198.9" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 86 (unused): (3686, 1732) cost 1833</title></circle>
+<circle cx="239.5" cy="374.7" r="4.2" fill="rgb(231,175,48)" stroke="#222" stroke-width="0.6"><title>node 87: (1455, 575) cost 407</title></circle>
+<circle cx="590.1" cy="447.7" r="5.3" fill="rgb(209,136,37)" stroke="#222" stroke-width="0.6"><title>node 88: (3762, 95) cost 765</title></circle>
+<circle cx="514.8" cy="391.2" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 89: (3267, 467) cost 240</title></circle>
+<circle cx="147.1" cy="298.4" r="5.9" fill="rgb(197,114,31)" stroke="#222" stroke-width="0.6"><title>node 90: (847, 1077) cost 958</title></circle>
+<circle cx="151.3" cy="204.8" r="4.7" fill="rgb(220,156,43)" stroke="#222" stroke-width="0.6"><title>node 91: (875, 1693) cost 582</title></circle>
+<circle cx="130.6" cy="433.7" r="6.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 92 (unused): (739, 187) cost 1116</title></circle>
+<circle cx="533.2" cy="326.3" r="3.4" fill="rgb(247,205,56)" stroke="#222" stroke-width="0.6"><title>node 93: (3388, 894) cost 138</title></circle>
+<circle cx="63.2" cy="430.5" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 94 (unused): (295, 208) cost 1568</title></circle>
+<circle cx="70.8" cy="380.2" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 95 (unused): (345, 539) cost 1085</title></circle>
+<circle cx="235.8" cy="403.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 96 (unused): (1431, 387) cost 1490</title></circle>
+<circle cx="77.9" cy="378.4" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 97: (392, 551) cost 196</title></circle>
+<circle cx="261.2" cy="415.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 98 (unused): (1598, 306) cost 887</title></circle>
+<circle cx="373.8" cy="344.5" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 99 (unused): (2339, 774) cost 1088</title></circle>
+<circle cx="133.7" cy="281.1" r="5.9" fill="rgb(198,115,31)" stroke="#222" stroke-width="0.6"><title>node 100: (759, 1191) cost 949</title></circle>
+<circle cx="566.2" cy="201.2" r="5.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 101 (unused): (3605, 1717) cost 844</title></circle>
+<circle cx="251.0" cy="346.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 102: (1531, 764) cost 1003</title></circle>
+<circle cx="529.1" cy="395.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 103 (unused): (3361, 440) cost 1341</title></circle>
+<circle cx="28.1" cy="457.7" r="5.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 104 (unused): (64, 29) cost 721</title></circle>
+<circle cx="490.5" cy="440.1" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 105 (unused): (3107, 145) cost 1905</title></circle>
+<circle cx="502.4" cy="369.6" r="3.4" fill="rgb(246,204,56)" stroke="#222" stroke-width="0.6"><title>node 106: (3185, 609) cost 144</title></circle>
+<circle cx="568.2" cy="417.3" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 107: (3618, 295) cost 4</title></circle>
+<circle cx="83.5" cy="266.5" r="5.0" fill="rgb(214,145,40)" stroke="#222" stroke-width="0.6"><title>node 108: (429, 1287) cost 678</title></circle>
+<circle cx="436.1" cy="223.2" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 109 (unused): (2749, 1572) cost 1851</title></circle>
+<circle cx="74.3" cy="439.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 110 (unused): (368, 147) cost 1538</title></circle>
+<circle cx="442.2" cy="452.9" r="6.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 111 (unused): (2789, 61) cost 1031</title></circle>
+<circle cx="283.8" cy="209.5" r="5.3" fill="rgb(208,134,37)" stroke="#222" stroke-width="0.6"><title>node 112: (1747, 1662) cost 782</title></circle>
+<circle cx="527.3" cy="377.6" r="5.8" fill="rgb(200,119,32)" stroke="#222" stroke-width="0.6"><title>node 113: (3349, 556) cost 916</title></circle>
+<circle cx="305.7" cy="460.0" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 114: (1891, 14) cost 500</title></circle>
+<circle cx="283.4" cy="172.0" r="5.3" fill="rgb(210,137,37)" stroke="#222" stroke-width="0.6"><title>node 115: (1744, 1909) cost 750</title></circle>
+<circle cx="20.9" cy="285.7" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 116: (17, 1161) cost 539</title></circle>
+<circle cx="549.0" cy="359.5" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 117 (unused): (3492, 675) cost 1638</title></circle>
+<circle cx="333.5" cy="455.9" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 118 (unused): (2074, 41) cost 1997</title></circle>
+<circle cx="37.5" cy="312.1" r="6.6" fill="rgb(183,89,24)" stroke="#222" stroke-width="0.6"><title>node 119: (126, 987) cost 1192</title></circle>
+<circle cx="97.7" cy="404.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 120 (unused): (522, 381) cost 1577</title></circle>
+<circle cx="309.8" cy="401.6" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 121 (unused): (1918, 398) cost 1531</title></circle>
+<circle cx="587.5" cy="444.8" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 122 (unused): (3745, 114) cost 1703</title></circle>
+<circle cx="129.4" cy="300.9" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 123: (731, 1061) cost 226</title></circle>
+<circle cx="524.6" cy="420.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 124 (unused): (3331, 274) cost 1676</title></circle>
+<circle cx="133.1" cy="390.1" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 125 (unused): (755, 474) cost 1988</title></circle>
+<circle cx="87.2" cy="171.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 126 (unused): (453, 1911) cost 1953</title></circle>
+<circle cx="77.0" cy="387.4" r="4.8" fill="rgb(219,155,42)" stroke="#222" stroke-width="0.6"><title>node 127: (386, 492) cost 592</title></circle>
+<circle cx="505.4" cy="286.3" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 128 (unused): (3205, 1157) cost 1754</title></circle>
+<circle cx="28.2" cy="449.1" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 129 (unused): (65, 86) cost 758</title></circle>
+<circle cx="579.1" cy="376.1" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 130: (3690, 566) cost 386</title></circle>
+<circle cx="381.4" cy="332.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 131: (2389, 852) cost 636</title></circle>
+<circle cx="176.8" cy="275.0" r="3.2" fill="rgb(251,212,58)" stroke="#222" stroke-width="0.6"><title>node 132: (1043, 1231) cost 71</title></circle>
+<circle cx="275.5" cy="256.8" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 133 (unused): (1692, 1351) cost 1422</title></circle>
+<circle cx="411.8" cy="382.8" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 134: (2589, 522) cost 236</title></circle>
+<circle cx="321.8" cy="402.2" r="3.3" fill="rgb(248,208,57)" stroke="#222" stroke-width="0.6"><title>node 135: (1997, 394) cost 110</title></circle>
+<circle cx="463.8" cy="176.4" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 136: (2931, 1880) cost 497</title></circle>
+<circle cx="116.2" cy="192.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 137 (unused): (644, 1775) cost 1785</title></circle>
+<circle cx="454.7" cy="421.1" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 138 (unused): (2871, 270) cost 985</title></circle>
+<circle cx="279.9" cy="224.3" r="5.6" fill="rgb(204,126,34)" stroke="#222" stroke-width="0.6"><title>node 139: (1721, 1565) cost 857</title></circle>
+<circle cx="323.0" cy="353.2" r="4.8" fill="rgb(219,154,42)" stroke="#222" stroke-width="0.6"><title>node 140: (2005, 717) cost 598</title></circle>
+<circle cx="204.5" cy="371.4" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 141: (1225, 597) cost 61</title></circle>
+<circle cx="470.2" cy="285.7" r="6.1" fill="rgb(193,107,29)" stroke="#222" stroke-width="0.6"><title>node 142: (2973, 1161) cost 1029</title></circle>
+<circle cx="363.5" cy="265.5" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 143 (unused): (2271, 1294) cost 921</title></circle>
+<circle cx="311.0" cy="324.1" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 144: (1926, 908) cost 335</title></circle>
+<circle cx="199.6" cy="364.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 145 (unused): (1193, 644) cost 1486</title></circle>
+<circle cx="609.4" cy="400.0" r="5.7" fill="rgb(202,122,33)" stroke="#222" stroke-width="0.6"><title>node 146: (3889, 409) cost 889</title></circle>
+<circle cx="616.5" cy="264.0" r="4.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 147 (unused): (3936, 1304) cost 536</title></circle>
+<circle cx="143.9" cy="311.5" r="7.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 148 (unused): (826, 991) cost 1363</title></circle>
+<circle cx="32.0" cy="289.0" r="3.4" fill="rgb(248,206,56)" stroke="#222" stroke-width="0.6"><title>node 149: (90, 1139) cost 124</title></circle>
+<circle cx="484.9" cy="372.5" r="4.9" fill="rgb(217,151,41)" stroke="#222" stroke-width="0.6"><title>node 150: (3070, 590) cost 628</title></circle>
+<circle cx="483.7" cy="396.3" r="4.9" fill="rgb(218,152,41)" stroke="#222" stroke-width="0.6"><title>node 151: (3062, 433) cost 621</title></circle>
+<circle cx="101.3" cy="275.3" r="4.3" fill="rgb(228,171,47)" stroke="#222" stroke-width="0.6"><title>node 152: (546, 1229) cost 446</title></circle>
+<circle cx="604.7" cy="441.6" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 153: (3858, 135) cost 665</title></circle>
+<circle cx="384.3" cy="174.6" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 154 (unused): (2408, 1892) cost 1051</title></circle>
+<circle cx="582.6" cy="231.1" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 155 (unused): (3713, 1520) cost 1747</title></circle>
+<circle cx="250.2" cy="315.6" r="6.0" fill="rgb(196,111,30)" stroke="#222" stroke-width="0.6"><title>node 156: (1526, 964) cost 985</title></circle>
+<circle cx="192.3" cy="198.4" r="4.1" fill="rgb(233,180,49)" stroke="#222" stroke-width="0.6"><title>node 157: (1145, 1735) cost 360</title></circle>
+<circle cx="411.3" cy="431.0" r="4.7" fill="rgb(221,158,43)" stroke="#222" stroke-width="0.6"><title>node 158: (2586, 205) cost 567</title></circle>
+<circle cx="607.7" cy="385.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 159: (3878, 505) cost 291</title></circle>
+<circle cx="123.5" cy="314.4" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 160: (692, 972) cost 909</title></circle>
+<circle cx="133.5" cy="386.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 161 (unused): (758, 497) cost 914</title></circle>
+<circle cx="168.0" cy="306.8" r="6.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 162 (unused): (985, 1022) cost 1250</title></circle>
+<circle cx="507.4" cy="165.9" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 163 (unused): (3218, 1949) cost 1049</title></circle>
+<circle cx="472.0" cy="253.3" r="3.1" fill="rgb(253,216,59)" stroke="#222" stroke-width="0.6"><title>node 164: (2985, 1374) cost 37</title></circle>
+<circle cx="470.6" cy="420.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 165 (unused): (2976, 276) cost 1887</title></circle>
+<circle cx="187.9" cy="429.9" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 166 (unused): (1116, 212) cost 1785</title></circle>
+<circle cx="55.7" cy="279.6" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 167 (unused): (246, 1201) cost 1939</title></circle>
+<circle cx="25.6" cy="324.7" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 168: (48, 904) cost 346</title></circle>
+<circle cx="537.9" cy="272.8" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 169 (unused): (3419, 1246) cost 998</title></circle>
+<circle cx="610.4" cy="401.9" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 170: (3896, 396) cost 872</title></circle>
+<circle cx="155.3" cy="436.3" r="4.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 171 (unused): (901, 170) cost 497</title></circle>
+<circle cx="249.6" cy="308.2" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 172 (unused): (1522, 1013) cost 1737</title></circle>
+<circle cx="257.1" cy="264.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 173 (unused): (1571, 1301) cost 1808</title></circle>
+<circle cx="454.5" cy="335.2" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 174: (2870, 835) cost 221</title></circle>
+<circle cx="311.5" cy="165.8" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 175 (unused): (1929, 1950) cost 1160</title></circle>
+<circle cx="452.2" cy="363.8" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 176: (2855, 647) cost 332</title></circle>
+<circle cx="349.6" cy="327.3" r="3.2" fill="rgb(252,214,58)" stroke="#222" stroke-width="0.6"><title>node 177: (2180, 887) cost 53</title></circle>
+<circle cx="526.1" cy="205.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 178: (3341, 1689) cost 346</title></circle>
+<circle cx="333.1" cy="328.8" r="5.2" fill="rgb(212,140,38)" stroke="#222" stroke-width="0.6"><title>node 179: (2071, 877) cost 723</title></circle>
+<circle cx="214.8" cy="331.4" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 180: (1293, 860) cost 0</title></circle>
+<circle cx="343.9" cy="442.5" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 181: (2142, 129) cost 724</title></circle>
+<circle cx="474.0" cy="443.6" r="5.1" fill="rgb(213,143,39)" stroke="#222" stroke-width="0.6"><title>node 182: (2998, 122) cost 698</title></circle>
+<circle cx="200.5" cy="439.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 183 (unused): (1199, 148) cost 1677</title></circle>
+<circle cx="491.3" cy="209.1" r="5.8" fill="rgb(198,116,32)" stroke="#222" stroke-width="0.6"><title>node 184: (3112, 1665) cost 941</title></circle>
+<circle cx="269.7" cy="338.9" r="5.0" fill="rgb(214,146,40)" stroke="#222" stroke-width="0.6"><title>node 185: (1654, 811) cost 675</title></circle>
+<circle cx="440.8" cy="200.3" r="5.4" fill="rgb(208,134,36)" stroke="#222" stroke-width="0.6"><title>node 186: (2780, 1723) cost 783</title></circle>
+<circle cx="173.8" cy="391.3" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 187: (1023, 466) cost 67</title></circle>
+<circle cx="40.7" cy="402.1" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 188 (unused): (147, 395) cost 1811</title></circle>
+<circle cx="192.5" cy="410.9" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 189 (unused): (1146, 337) cost 910</title></circle>
+<circle cx="308.4" cy="264.4" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 190 (unused): (1909, 1301) cost 1689</title></circle>
+<circle cx="205.6" cy="342.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 191 (unused): (1232, 789) cost 1896</title></circle>
+<circle cx="394.3" cy="453.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 192: (2474, 60) cost 667</title></circle>
+<circle cx="608.1" cy="446.8" r="5.6" fill="rgb(204,126,34)" stroke="#222" stroke-width="0.6"><title>node 193: (3881, 101) cost 854</title></circle>
+<circle cx="441.9" cy="301.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 194 (unused): (2787, 1060) cost 1168</title></circle>
+<circle cx="476.2" cy="197.8" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 195 (unused): (3013, 1739) cost 1973</title></circle>
+<circle cx="249.2" cy="262.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 196 (unused): (1519, 1315) cost 1347</title></circle>
+<circle cx="484.6" cy="160.5" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 197 (unused): (3068, 1985) cost 1868</title></circle>
+<circle cx="162.1" cy="417.6" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 198 (unused): (946, 293) cost 1976</title></circle>
+<circle cx="34.3" cy="169.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 199 (unused): (105, 1923) cost 1608</title></circle>
+<circle cx="406.2" cy="296.5" r="11" fill="none" stroke="#3b6ea5" stroke-width="2"><title>start: node 54</title></circle></svg><div class="legend"><span class="bar"></span> node cost 0 &rarr; 1997 (colour and size) &middot; hollow grey = not selected &middot; ring = first node</div>
+  <h3>Best solution (node indices, from 0)</h3>
+  <pre>54, 9, 33, 36, 177, 67, 144, 53, 135, 58, 134, 176, 174, 106, 89, 107, 57, 182, 151, 93, 50, 3, 1, 164, 178, 29, 136, 186, 184, 47, 159, 130, 153, 78, 88, 193, 170, 146, 75, 64, 150, 42, 113, 43, 85, 142, 8, 131, 84, 158, 192, 181, 114, 141, 180, 132, 76, 80, 48, 31, 63, 149, 168, 97, 127, 187, 30, 123, 152, 108, 60, 116, 49, 11, 119, 160, 83, 90, 51, 16, 35, 87, 45, 140, 52, 179, 185, 28, 102, 156, 157, 71, 91, 38, 100, 4, 112, 139, 115, 5</pre>
+  <h3>Solution checker</h3>
+  <p><span class="ok">&#10004; checked</span>: 100 distinct nodes, all indices valid.</p>
+</section>
+<section>
+  <h2>TSPA &mdash; Nearest neighbor (any position)</h2>
+  <p>Best of 200 valid runs: run #11 with objective <b>72328</b>.</p>
+  <svg viewBox="0 0 640 480" class="plot" role="img" aria-label="Best solution plot">
+<polygon points="28.1,457.7 28.2,449.1 64.1,426.9 77.0,387.4 77.9,378.4 25.6,324.7 20.9,285.7 32.0,289.0 37.0,296.9 53.3,298.0 69.7,297.4 123.5,314.4 131.1,306.0 129.4,300.9 133.7,281.1 101.3,275.3 83.5,266.5 51.9,263.6 32.9,176.6 56.3,169.9 111.0,217.1 151.3,204.8 192.3,198.4 194.5,212.6 205.9,243.9 187.2,263.0 176.8,275.0 214.8,331.4 233.4,341.2 251.0,346.0 269.7,338.9 258.9,315.3 250.2,315.6 269.8,277.0 273.8,280.7 297.2,319.9 311.0,324.1 323.0,353.2 326.1,340.5 333.1,328.8 332.6,310.6 349.6,327.3 363.5,325.8 379.1,288.4 406.2,290.9 406.2,296.5 381.4,332.6 454.5,335.2 442.6,301.3 472.0,253.3 440.8,200.3 463.8,176.4 507.4,165.9 548.0,167.9 566.2,201.2 526.1,205.4 536.4,263.8 537.9,272.8 529.4,289.5 538.7,292.7 616.5,264.0 591.3,311.4 533.2,326.3 502.4,369.6 508.4,392.5 514.8,391.2 527.3,377.6 579.1,376.1 607.7,385.4 609.4,400.0 610.4,401.9 604.7,441.6 608.1,446.8 611.3,456.0 590.1,447.7 568.2,417.3 550.5,455.3 508.1,454.2 474.0,443.6 483.7,396.3 484.9,372.5 452.2,363.8 441.6,368.8 411.8,382.8 381.2,381.0 377.4,403.8 411.3,431.0 394.3,453.0 343.9,442.5 305.7,460.0 321.8,402.2 318.0,383.3 290.5,369.9 239.5,374.7 204.5,371.4 173.8,391.3 166.0,367.4 192.5,410.9 164.8,433.9 155.3,436.3" fill="none" stroke="#3b6ea5" stroke-width="1.4"/>
+<circle cx="465.7" cy="386.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 0 (unused): (2944, 497) cost 1607</title></circle>
+<circle cx="536.4" cy="263.8" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 1: (3409, 1305) cost 225</title></circle>
+<circle cx="164.8" cy="433.9" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 2: (964, 186) cost 387</title></circle>
+<circle cx="529.4" cy="289.5" r="4.0" fill="rgb(235,184,50)" stroke="#222" stroke-width="0.6"><title>node 3: (3363, 1136) cost 327</title></circle>
+<circle cx="205.9" cy="243.9" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 4: (1234, 1436) cost 864</title></circle>
+<circle cx="287.8" cy="189.0" r="6.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 5 (unused): (1773, 1797) cost 1188</title></circle>
+<circle cx="601.5" cy="239.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 6 (unused): (3837, 1462) cost 1598</title></circle>
+<circle cx="47.8" cy="168.8" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 7 (unused): (194, 1930) cost 1402</title></circle>
+<circle cx="442.6" cy="301.3" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 8: (2792, 1058) cost 873</title></circle>
+<circle cx="406.2" cy="290.9" r="4.2" fill="rgb(232,178,48)" stroke="#222" stroke-width="0.6"><title>node 9: (2552, 1127) cost 383</title></circle>
+<circle cx="219.4" cy="431.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 10 (unused): (1323, 205) cost 1181</title></circle>
+<circle cx="53.3" cy="298.0" r="6.2" fill="rgb(191,103,28)" stroke="#222" stroke-width="0.6"><title>node 11: (230, 1080) cost 1059</title></circle>
+<circle cx="125.8" cy="329.1" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 12 (unused): (707, 875) cost 1765</title></circle>
+<circle cx="425.9" cy="392.4" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 13 (unused): (2682, 459) cost 1670</title></circle>
+<circle cx="136.3" cy="262.9" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 14 (unused): (776, 1311) cost 1756</title></circle>
+<circle cx="389.5" cy="232.5" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 15 (unused): (2442, 1511) cost 1505</title></circle>
+<circle cx="273.8" cy="280.7" r="4.2" fill="rgb(230,174,48)" stroke="#222" stroke-width="0.6"><title>node 16: (1681, 1194) cost 416</title></circle>
+<circle cx="567.4" cy="178.2" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 17 (unused): (3613, 1868) cost 1224</title></circle>
+<circle cx="246.9" cy="231.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 18 (unused): (1504, 1517) cost 1650</title></circle>
+<circle cx="530.3" cy="169.1" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 19 (unused): (3369, 1928) cost 1420</title></circle>
+<circle cx="399.5" cy="430.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 20 (unused): (2508, 208) cost 1389</title></circle>
+<circle cx="615.0" cy="236.6" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 21 (unused): (3926, 1484) cost 1337</title></circle>
+<circle cx="259.1" cy="452.7" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 22 (unused): (1584, 62) cost 1560</title></circle>
+<circle cx="173.2" cy="347.4" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 23 (unused): (1019, 755) cost 1815</title></circle>
+<circle cx="493.3" cy="179.8" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 24 (unused): (3125, 1858) cost 1312</title></circle>
+<circle cx="278.7" cy="451.9" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 25 (unused): (1713, 67) cost 1051</title></circle>
+<circle cx="620.0" cy="437.5" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 26 (unused): (3959, 162) cost 1320</title></circle>
+<circle cx="238.2" cy="401.0" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 27 (unused): (1447, 402) cost 1405</title></circle>
+<circle cx="233.4" cy="341.2" r="5.2" fill="rgb(210,138,38)" stroke="#222" stroke-width="0.6"><title>node 28: (1415, 796) cost 741</title></circle>
+<circle cx="548.0" cy="167.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 29: (3485, 1936) cost 494</title></circle>
+<circle cx="166.0" cy="367.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 30: (972, 623) cost 347</title></circle>
+<circle cx="32.9" cy="176.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 31: (96, 1879) cost 634</title></circle>
+<circle cx="152.4" cy="439.0" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 32 (unused): (882, 152) cost 1627</title></circle>
+<circle cx="379.1" cy="288.4" r="3.7" fill="rgb(240,193,53)" stroke="#222" stroke-width="0.6"><title>node 33: (2374, 1143) cost 248</title></circle>
+<circle cx="412.7" cy="215.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 34 (unused): (2595, 1621) cost 1527</title></circle>
+<circle cx="258.9" cy="315.3" r="4.1" fill="rgb(232,178,49)" stroke="#222" stroke-width="0.6"><title>node 35: (1583, 966) cost 382</title></circle>
+<circle cx="363.5" cy="325.8" r="3.3" fill="rgb(249,209,57)" stroke="#222" stroke-width="0.6"><title>node 36: (2271, 897) cost 98</title></circle>
+<circle cx="612.9" cy="304.2" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 37 (unused): (3912, 1039) cost 1051</title></circle>
+<circle cx="145.4" cy="235.5" r="5.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 38 (unused): (836, 1491) cost 961</title></circle>
+<circle cx="365.3" cy="161.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 39 (unused): (2283, 1976) cost 903</title></circle>
+<circle cx="169.7" cy="392.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 40 (unused): (996, 459) cost 1813</title></circle>
+<circle cx="339.1" cy="367.0" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 41 (unused): (2111, 626) cost 1056</title></circle>
+<circle cx="508.4" cy="392.5" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 42: (3225, 458) cost 870</title></circle>
+<circle cx="513.8" cy="363.8" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 43 (unused): (3260, 647) cost 1098</title></circle>
+<circle cx="146.6" cy="277.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 44 (unused): (844, 1215) cost 1659</title></circle>
+<circle cx="290.5" cy="369.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 45: (1791, 607) cost 491</title></circle>
+<circle cx="578.4" cy="223.7" r="7.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 46 (unused): (3685, 1569) cost 1465</title></circle>
+<circle cx="591.3" cy="311.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 47: (3770, 992) cost 291</title></circle>
+<circle cx="56.3" cy="169.9" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 48: (250, 1923) cost 219</title></circle>
+<circle cx="69.7" cy="297.4" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 49: (338, 1084) cost 573</title></circle>
+<circle cx="538.7" cy="292.7" r="3.6" fill="rgb(244,200,54)" stroke="#222" stroke-width="0.6"><title>node 50: (3424, 1115) cost 186</title></circle>
+<circle cx="269.8" cy="277.0" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 51: (1655, 1218) cost 196</title></circle>
+<circle cx="332.6" cy="310.6" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 52: (2068, 997) cost 570</title></circle>
+<circle cx="326.1" cy="340.5" r="4.2" fill="rgb(231,176,48)" stroke="#222" stroke-width="0.6"><title>node 53: (2025, 800) cost 403</title></circle>
+<circle cx="406.2" cy="296.5" r="4.8" fill="rgb(220,156,42)" stroke="#222" stroke-width="0.6"><title>node 54: (2552, 1090) cost 583</title></circle>
+<circle cx="590.7" cy="177.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 55 (unused): (3766, 1871) cost 887</title></circle>
+<circle cx="483.5" cy="214.0" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 56 (unused): (3061, 1633) cost 1762</title></circle>
+<circle cx="508.1" cy="454.2" r="3.4" fill="rgb(247,206,56)" stroke="#222" stroke-width="0.6"><title>node 57: (3223, 52) cost 126</title></circle>
+<circle cx="377.4" cy="403.8" r="3.7" fill="rgb(242,195,53)" stroke="#222" stroke-width="0.6"><title>node 58: (2363, 384) cost 223</title></circle>
+<circle cx="544.2" cy="248.9" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 59 (unused): (3460, 1403) cost 1152</title></circle>
+<circle cx="51.9" cy="263.6" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 60: (221, 1306) cost 533</title></circle>
+<circle cx="325.5" cy="383.6" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 61 (unused): (2021, 517) cost 1224</title></circle>
+<circle cx="377.1" cy="233.6" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 62 (unused): (2361, 1504) cost 927</title></circle>
+<circle cx="37.0" cy="296.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 63: (123, 1087) cost 27</title></circle>
+<circle cx="550.5" cy="455.3" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 64: (3502, 45) cost 859</title></circle>
+<circle cx="430.2" cy="400.0" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 65 (unused): (2710, 409) cost 1286</title></circle>
+<circle cx="99.0" cy="246.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 66 (unused): (531, 1421) cost 1554</title></circle>
+<circle cx="297.2" cy="319.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 67: (1835, 936) cost 29</title></circle>
+<circle cx="156.0" cy="289.9" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 68 (unused): (906, 1133) cost 1965</title></circle>
+<circle cx="64.1" cy="426.9" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 69: (301, 232) cost 724</title></circle>
+<circle cx="254.8" cy="403.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 70 (unused): (1556, 385) cost 1602</title></circle>
+<circle cx="194.5" cy="212.6" r="5.2" fill="rgb(211,139,38)" stroke="#222" stroke-width="0.6"><title>node 71: (1159, 1642) cost 739</title></circle>
+<circle cx="441.6" cy="368.8" r="6.1" fill="rgb(194,108,29)" stroke="#222" stroke-width="0.6"><title>node 72: (2785, 614) cost 1018</title></circle>
+<circle cx="318.0" cy="383.3" r="5.3" fill="rgb(208,134,37)" stroke="#222" stroke-width="0.6"><title>node 73: (1972, 519) cost 781</title></circle>
+<circle cx="342.8" cy="293.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 74 (unused): (2135, 1108) cost 1975</title></circle>
+<circle cx="606.8" cy="426.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 75 (unused): (3872, 238) cost 1160</title></circle>
+<circle cx="187.2" cy="263.0" r="4.3" fill="rgb(229,173,47)" stroke="#222" stroke-width="0.6"><title>node 76: (1111, 1310) cost 426</title></circle>
+<circle cx="20.0" cy="187.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 77 (unused): (11, 1807) cost 1394</title></circle>
+<circle cx="611.3" cy="456.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 78: (3902, 40) cost 667</title></circle>
+<circle cx="547.7" cy="168.1" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 79 (unused): (3483, 1935) cost 1943</title></circle>
+<circle cx="111.0" cy="217.1" r="3.1" fill="rgb(254,218,59)" stroke="#222" stroke-width="0.6"><title>node 80: (610, 1612) cost 21</title></circle>
+<circle cx="499.3" cy="326.6" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 81 (unused): (3165, 892) cost 1172</title></circle>
+<circle cx="51.2" cy="261.1" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 82 (unused): (216, 1323) cost 1287</title></circle>
+<circle cx="131.1" cy="306.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 83: (742, 1027) cost 997</title></circle>
+<circle cx="381.2" cy="381.0" r="4.4" fill="rgb(226,167,46)" stroke="#222" stroke-width="0.6"><title>node 84: (2388, 534) cost 477</title></circle>
+<circle cx="491.1" cy="296.6" r="5.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 85 (unused): (3111, 1089) cost 838</title></circle>
+<circle cx="578.5" cy="198.9" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 86 (unused): (3686, 1732) cost 1833</title></circle>
+<circle cx="239.5" cy="374.7" r="4.2" fill="rgb(231,175,48)" stroke="#222" stroke-width="0.6"><title>node 87: (1455, 575) cost 407</title></circle>
+<circle cx="590.1" cy="447.7" r="5.3" fill="rgb(209,136,37)" stroke="#222" stroke-width="0.6"><title>node 88: (3762, 95) cost 765</title></circle>
+<circle cx="514.8" cy="391.2" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 89: (3267, 467) cost 240</title></circle>
+<circle cx="147.1" cy="298.4" r="5.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 90 (unused): (847, 1077) cost 958</title></circle>
+<circle cx="151.3" cy="204.8" r="4.7" fill="rgb(220,156,43)" stroke="#222" stroke-width="0.6"><title>node 91: (875, 1693) cost 582</title></circle>
+<circle cx="130.6" cy="433.7" r="6.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 92 (unused): (739, 187) cost 1116</title></circle>
+<circle cx="533.2" cy="326.3" r="3.4" fill="rgb(247,205,56)" stroke="#222" stroke-width="0.6"><title>node 93: (3388, 894) cost 138</title></circle>
+<circle cx="63.2" cy="430.5" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 94 (unused): (295, 208) cost 1568</title></circle>
+<circle cx="70.8" cy="380.2" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 95 (unused): (345, 539) cost 1085</title></circle>
+<circle cx="235.8" cy="403.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 96 (unused): (1431, 387) cost 1490</title></circle>
+<circle cx="77.9" cy="378.4" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 97: (392, 551) cost 196</title></circle>
+<circle cx="261.2" cy="415.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 98 (unused): (1598, 306) cost 887</title></circle>
+<circle cx="373.8" cy="344.5" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 99 (unused): (2339, 774) cost 1088</title></circle>
+<circle cx="133.7" cy="281.1" r="5.9" fill="rgb(198,115,31)" stroke="#222" stroke-width="0.6"><title>node 100: (759, 1191) cost 949</title></circle>
+<circle cx="566.2" cy="201.2" r="5.5" fill="rgb(204,127,35)" stroke="#222" stroke-width="0.6"><title>node 101: (3605, 1717) cost 844</title></circle>
+<circle cx="251.0" cy="346.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 102: (1531, 764) cost 1003</title></circle>
+<circle cx="529.1" cy="395.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 103 (unused): (3361, 440) cost 1341</title></circle>
+<circle cx="28.1" cy="457.7" r="5.2" fill="rgb(212,141,38)" stroke="#222" stroke-width="0.6"><title>node 104: (64, 29) cost 721</title></circle>
+<circle cx="490.5" cy="440.1" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 105 (unused): (3107, 145) cost 1905</title></circle>
+<circle cx="502.4" cy="369.6" r="3.4" fill="rgb(246,204,56)" stroke="#222" stroke-width="0.6"><title>node 106: (3185, 609) cost 144</title></circle>
+<circle cx="568.2" cy="417.3" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 107: (3618, 295) cost 4</title></circle>
+<circle cx="83.5" cy="266.5" r="5.0" fill="rgb(214,145,40)" stroke="#222" stroke-width="0.6"><title>node 108: (429, 1287) cost 678</title></circle>
+<circle cx="436.1" cy="223.2" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 109 (unused): (2749, 1572) cost 1851</title></circle>
+<circle cx="74.3" cy="439.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 110 (unused): (368, 147) cost 1538</title></circle>
+<circle cx="442.2" cy="452.9" r="6.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 111 (unused): (2789, 61) cost 1031</title></circle>
+<circle cx="283.8" cy="209.5" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 112 (unused): (1747, 1662) cost 782</title></circle>
+<circle cx="527.3" cy="377.6" r="5.8" fill="rgb(200,119,32)" stroke="#222" stroke-width="0.6"><title>node 113: (3349, 556) cost 916</title></circle>
+<circle cx="305.7" cy="460.0" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 114: (1891, 14) cost 500</title></circle>
+<circle cx="283.4" cy="172.0" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 115 (unused): (1744, 1909) cost 750</title></circle>
+<circle cx="20.9" cy="285.7" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 116: (17, 1161) cost 539</title></circle>
+<circle cx="549.0" cy="359.5" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 117 (unused): (3492, 675) cost 1638</title></circle>
+<circle cx="333.5" cy="455.9" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 118 (unused): (2074, 41) cost 1997</title></circle>
+<circle cx="37.5" cy="312.1" r="6.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 119 (unused): (126, 987) cost 1192</title></circle>
+<circle cx="97.7" cy="404.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 120 (unused): (522, 381) cost 1577</title></circle>
+<circle cx="309.8" cy="401.6" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 121 (unused): (1918, 398) cost 1531</title></circle>
+<circle cx="587.5" cy="444.8" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 122 (unused): (3745, 114) cost 1703</title></circle>
+<circle cx="129.4" cy="300.9" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 123: (731, 1061) cost 226</title></circle>
+<circle cx="524.6" cy="420.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 124 (unused): (3331, 274) cost 1676</title></circle>
+<circle cx="133.1" cy="390.1" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 125 (unused): (755, 474) cost 1988</title></circle>
+<circle cx="87.2" cy="171.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 126 (unused): (453, 1911) cost 1953</title></circle>
+<circle cx="77.0" cy="387.4" r="4.8" fill="rgb(219,155,42)" stroke="#222" stroke-width="0.6"><title>node 127: (386, 492) cost 592</title></circle>
+<circle cx="505.4" cy="286.3" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 128 (unused): (3205, 1157) cost 1754</title></circle>
+<circle cx="28.2" cy="449.1" r="5.3" fill="rgb(209,136,37)" stroke="#222" stroke-width="0.6"><title>node 129: (65, 86) cost 758</title></circle>
+<circle cx="579.1" cy="376.1" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 130: (3690, 566) cost 386</title></circle>
+<circle cx="381.4" cy="332.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 131: (2389, 852) cost 636</title></circle>
+<circle cx="176.8" cy="275.0" r="3.2" fill="rgb(251,212,58)" stroke="#222" stroke-width="0.6"><title>node 132: (1043, 1231) cost 71</title></circle>
+<circle cx="275.5" cy="256.8" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 133 (unused): (1692, 1351) cost 1422</title></circle>
+<circle cx="411.8" cy="382.8" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 134: (2589, 522) cost 236</title></circle>
+<circle cx="321.8" cy="402.2" r="3.3" fill="rgb(248,208,57)" stroke="#222" stroke-width="0.6"><title>node 135: (1997, 394) cost 110</title></circle>
+<circle cx="463.8" cy="176.4" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 136: (2931, 1880) cost 497</title></circle>
+<circle cx="116.2" cy="192.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 137 (unused): (644, 1775) cost 1785</title></circle>
+<circle cx="454.7" cy="421.1" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 138 (unused): (2871, 270) cost 985</title></circle>
+<circle cx="279.9" cy="224.3" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 139 (unused): (1721, 1565) cost 857</title></circle>
+<circle cx="323.0" cy="353.2" r="4.8" fill="rgb(219,154,42)" stroke="#222" stroke-width="0.6"><title>node 140: (2005, 717) cost 598</title></circle>
+<circle cx="204.5" cy="371.4" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 141: (1225, 597) cost 61</title></circle>
+<circle cx="470.2" cy="285.7" r="6.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 142 (unused): (2973, 1161) cost 1029</title></circle>
+<circle cx="363.5" cy="265.5" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 143 (unused): (2271, 1294) cost 921</title></circle>
+<circle cx="311.0" cy="324.1" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 144: (1926, 908) cost 335</title></circle>
+<circle cx="199.6" cy="364.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 145 (unused): (1193, 644) cost 1486</title></circle>
+<circle cx="609.4" cy="400.0" r="5.7" fill="rgb(202,122,33)" stroke="#222" stroke-width="0.6"><title>node 146: (3889, 409) cost 889</title></circle>
+<circle cx="616.5" cy="264.0" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 147: (3936, 1304) cost 536</title></circle>
+<circle cx="143.9" cy="311.5" r="7.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 148 (unused): (826, 991) cost 1363</title></circle>
+<circle cx="32.0" cy="289.0" r="3.4" fill="rgb(248,206,56)" stroke="#222" stroke-width="0.6"><title>node 149: (90, 1139) cost 124</title></circle>
+<circle cx="484.9" cy="372.5" r="4.9" fill="rgb(217,151,41)" stroke="#222" stroke-width="0.6"><title>node 150: (3070, 590) cost 628</title></circle>
+<circle cx="483.7" cy="396.3" r="4.9" fill="rgb(218,152,41)" stroke="#222" stroke-width="0.6"><title>node 151: (3062, 433) cost 621</title></circle>
+<circle cx="101.3" cy="275.3" r="4.3" fill="rgb(228,171,47)" stroke="#222" stroke-width="0.6"><title>node 152: (546, 1229) cost 446</title></circle>
+<circle cx="604.7" cy="441.6" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 153: (3858, 135) cost 665</title></circle>
+<circle cx="384.3" cy="174.6" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 154 (unused): (2408, 1892) cost 1051</title></circle>
+<circle cx="582.6" cy="231.1" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 155 (unused): (3713, 1520) cost 1747</title></circle>
+<circle cx="250.2" cy="315.6" r="6.0" fill="rgb(196,111,30)" stroke="#222" stroke-width="0.6"><title>node 156: (1526, 964) cost 985</title></circle>
+<circle cx="192.3" cy="198.4" r="4.1" fill="rgb(233,180,49)" stroke="#222" stroke-width="0.6"><title>node 157: (1145, 1735) cost 360</title></circle>
+<circle cx="411.3" cy="431.0" r="4.7" fill="rgb(221,158,43)" stroke="#222" stroke-width="0.6"><title>node 158: (2586, 205) cost 567</title></circle>
+<circle cx="607.7" cy="385.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 159: (3878, 505) cost 291</title></circle>
+<circle cx="123.5" cy="314.4" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 160: (692, 972) cost 909</title></circle>
+<circle cx="133.5" cy="386.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 161 (unused): (758, 497) cost 914</title></circle>
+<circle cx="168.0" cy="306.8" r="6.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 162 (unused): (985, 1022) cost 1250</title></circle>
+<circle cx="507.4" cy="165.9" r="6.2" fill="rgb(192,104,28)" stroke="#222" stroke-width="0.6"><title>node 163: (3218, 1949) cost 1049</title></circle>
+<circle cx="472.0" cy="253.3" r="3.1" fill="rgb(253,216,59)" stroke="#222" stroke-width="0.6"><title>node 164: (2985, 1374) cost 37</title></circle>
+<circle cx="470.6" cy="420.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 165 (unused): (2976, 276) cost 1887</title></circle>
+<circle cx="187.9" cy="429.9" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 166 (unused): (1116, 212) cost 1785</title></circle>
+<circle cx="55.7" cy="279.6" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 167 (unused): (246, 1201) cost 1939</title></circle>
+<circle cx="25.6" cy="324.7" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 168: (48, 904) cost 346</title></circle>
+<circle cx="537.9" cy="272.8" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 169: (3419, 1246) cost 998</title></circle>
+<circle cx="610.4" cy="401.9" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 170: (3896, 396) cost 872</title></circle>
+<circle cx="155.3" cy="436.3" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 171: (901, 170) cost 497</title></circle>
+<circle cx="249.6" cy="308.2" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 172 (unused): (1522, 1013) cost 1737</title></circle>
+<circle cx="257.1" cy="264.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 173 (unused): (1571, 1301) cost 1808</title></circle>
+<circle cx="454.5" cy="335.2" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 174: (2870, 835) cost 221</title></circle>
+<circle cx="311.5" cy="165.8" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 175 (unused): (1929, 1950) cost 1160</title></circle>
+<circle cx="452.2" cy="363.8" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 176: (2855, 647) cost 332</title></circle>
+<circle cx="349.6" cy="327.3" r="3.2" fill="rgb(252,214,58)" stroke="#222" stroke-width="0.6"><title>node 177: (2180, 887) cost 53</title></circle>
+<circle cx="526.1" cy="205.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 178: (3341, 1689) cost 346</title></circle>
+<circle cx="333.1" cy="328.8" r="5.2" fill="rgb(212,140,38)" stroke="#222" stroke-width="0.6"><title>node 179: (2071, 877) cost 723</title></circle>
+<circle cx="214.8" cy="331.4" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 180: (1293, 860) cost 0</title></circle>
+<circle cx="343.9" cy="442.5" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 181: (2142, 129) cost 724</title></circle>
+<circle cx="474.0" cy="443.6" r="5.1" fill="rgb(213,143,39)" stroke="#222" stroke-width="0.6"><title>node 182: (2998, 122) cost 698</title></circle>
+<circle cx="200.5" cy="439.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 183 (unused): (1199, 148) cost 1677</title></circle>
+<circle cx="491.3" cy="209.1" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 184 (unused): (3112, 1665) cost 941</title></circle>
+<circle cx="269.7" cy="338.9" r="5.0" fill="rgb(214,146,40)" stroke="#222" stroke-width="0.6"><title>node 185: (1654, 811) cost 675</title></circle>
+<circle cx="440.8" cy="200.3" r="5.4" fill="rgb(208,134,36)" stroke="#222" stroke-width="0.6"><title>node 186: (2780, 1723) cost 783</title></circle>
+<circle cx="173.8" cy="391.3" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 187: (1023, 466) cost 67</title></circle>
+<circle cx="40.7" cy="402.1" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 188 (unused): (147, 395) cost 1811</title></circle>
+<circle cx="192.5" cy="410.9" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 189: (1146, 337) cost 910</title></circle>
+<circle cx="308.4" cy="264.4" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 190 (unused): (1909, 1301) cost 1689</title></circle>
+<circle cx="205.6" cy="342.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 191 (unused): (1232, 789) cost 1896</title></circle>
+<circle cx="394.3" cy="453.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 192: (2474, 60) cost 667</title></circle>
+<circle cx="608.1" cy="446.8" r="5.6" fill="rgb(204,126,34)" stroke="#222" stroke-width="0.6"><title>node 193: (3881, 101) cost 854</title></circle>
+<circle cx="441.9" cy="301.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 194 (unused): (2787, 1060) cost 1168</title></circle>
+<circle cx="476.2" cy="197.8" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 195 (unused): (3013, 1739) cost 1973</title></circle>
+<circle cx="249.2" cy="262.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 196 (unused): (1519, 1315) cost 1347</title></circle>
+<circle cx="484.6" cy="160.5" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 197 (unused): (3068, 1985) cost 1868</title></circle>
+<circle cx="162.1" cy="417.6" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 198 (unused): (946, 293) cost 1976</title></circle>
+<circle cx="34.3" cy="169.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 199 (unused): (105, 1923) cost 1608</title></circle>
+<circle cx="28.1" cy="457.7" r="11" fill="none" stroke="#3b6ea5" stroke-width="2"><title>start: node 104</title></circle></svg><div class="legend"><span class="bar"></span> node cost 0 &rarr; 1997 (colour and size) &middot; hollow grey = not selected &middot; ring = first node</div>
+  <h3>Best solution (node indices, from 0)</h3>
+  <pre>104, 129, 69, 127, 97, 168, 116, 149, 63, 11, 49, 160, 83, 123, 100, 152, 108, 60, 31, 48, 80, 91, 157, 71, 4, 76, 132, 180, 28, 102, 185, 35, 156, 51, 16, 67, 144, 140, 53, 179, 52, 177, 36, 33, 9, 54, 131, 174, 8, 164, 186, 136, 163, 29, 101, 178, 1, 169, 3, 50, 147, 47, 93, 106, 42, 89, 113, 130, 159, 146, 170, 153, 193, 78, 88, 107, 64, 57, 182, 151, 150, 176, 72, 134, 84, 58, 158, 192, 181, 114, 135, 73, 45, 87, 141, 187, 30, 189, 2, 171</pre>
+  <h3>Solution checker</h3>
+  <p><span class="ok">&#10004; checked</span>: 100 distinct nodes, all indices valid.</p>
+</section>
+<section>
+  <h2>TSPA &mdash; Greedy cycle</h2>
+  <p>Best of 200 valid runs: run #31 with objective <b>72590</b>.</p>
+  <svg viewBox="0 0 640 480" class="plot" role="img" aria-label="Best solution plot">
+<polygon points="32.9,176.6 20.9,285.7 32.0,289.0 25.6,324.7 37.0,296.9 53.3,298.0 69.7,297.4 51.9,263.6 83.5,266.5 101.3,275.3 133.7,281.1 147.1,298.4 129.4,300.9 131.1,306.0 123.5,314.4 77.9,378.4 77.0,387.4 64.1,426.9 155.3,436.3 164.8,433.9 192.5,410.9 166.0,367.4 173.8,391.3 204.5,371.4 239.5,374.7 290.5,369.9 318.0,383.3 321.8,402.2 305.7,460.0 343.9,442.5 394.3,453.0 411.3,431.0 377.4,403.8 381.2,381.0 411.8,382.8 441.6,368.8 452.2,363.8 484.9,372.5 483.7,396.3 474.0,443.6 508.1,454.2 550.5,455.3 568.2,417.3 590.1,447.7 611.3,456.0 608.1,446.8 604.7,441.6 610.4,401.9 609.4,400.0 607.7,385.4 579.1,376.1 527.3,377.6 514.8,391.2 508.4,392.5 502.4,369.6 533.2,326.3 591.3,311.4 616.5,264.0 538.7,292.7 529.4,289.5 537.9,272.8 536.4,263.8 526.1,205.4 566.2,201.2 548.0,167.9 507.4,165.9 463.8,176.4 440.8,200.3 472.0,253.3 470.2,285.7 442.6,301.3 454.5,335.2 381.4,332.6 406.2,296.5 406.2,290.9 379.1,288.4 363.5,325.8 349.6,327.3 332.6,310.6 333.1,328.8 326.1,340.5 323.0,353.2 311.0,324.1 297.2,319.9 273.8,280.7 269.8,277.0 250.2,315.6 258.9,315.3 269.7,338.9 251.0,346.0 233.4,341.2 214.8,331.4 176.8,275.0 187.2,263.0 205.9,243.9 194.5,212.6 192.3,198.4 151.3,204.8 111.0,217.1 56.3,169.9" fill="none" stroke="#3b6ea5" stroke-width="1.4"/>
+<circle cx="465.7" cy="386.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 0 (unused): (2944, 497) cost 1607</title></circle>
+<circle cx="536.4" cy="263.8" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 1: (3409, 1305) cost 225</title></circle>
+<circle cx="164.8" cy="433.9" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 2: (964, 186) cost 387</title></circle>
+<circle cx="529.4" cy="289.5" r="4.0" fill="rgb(235,184,50)" stroke="#222" stroke-width="0.6"><title>node 3: (3363, 1136) cost 327</title></circle>
+<circle cx="205.9" cy="243.9" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 4: (1234, 1436) cost 864</title></circle>
+<circle cx="287.8" cy="189.0" r="6.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 5 (unused): (1773, 1797) cost 1188</title></circle>
+<circle cx="601.5" cy="239.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 6 (unused): (3837, 1462) cost 1598</title></circle>
+<circle cx="47.8" cy="168.8" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 7 (unused): (194, 1930) cost 1402</title></circle>
+<circle cx="442.6" cy="301.3" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 8: (2792, 1058) cost 873</title></circle>
+<circle cx="406.2" cy="290.9" r="4.2" fill="rgb(232,178,48)" stroke="#222" stroke-width="0.6"><title>node 9: (2552, 1127) cost 383</title></circle>
+<circle cx="219.4" cy="431.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 10 (unused): (1323, 205) cost 1181</title></circle>
+<circle cx="53.3" cy="298.0" r="6.2" fill="rgb(191,103,28)" stroke="#222" stroke-width="0.6"><title>node 11: (230, 1080) cost 1059</title></circle>
+<circle cx="125.8" cy="329.1" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 12 (unused): (707, 875) cost 1765</title></circle>
+<circle cx="425.9" cy="392.4" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 13 (unused): (2682, 459) cost 1670</title></circle>
+<circle cx="136.3" cy="262.9" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 14 (unused): (776, 1311) cost 1756</title></circle>
+<circle cx="389.5" cy="232.5" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 15 (unused): (2442, 1511) cost 1505</title></circle>
+<circle cx="273.8" cy="280.7" r="4.2" fill="rgb(230,174,48)" stroke="#222" stroke-width="0.6"><title>node 16: (1681, 1194) cost 416</title></circle>
+<circle cx="567.4" cy="178.2" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 17 (unused): (3613, 1868) cost 1224</title></circle>
+<circle cx="246.9" cy="231.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 18 (unused): (1504, 1517) cost 1650</title></circle>
+<circle cx="530.3" cy="169.1" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 19 (unused): (3369, 1928) cost 1420</title></circle>
+<circle cx="399.5" cy="430.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 20 (unused): (2508, 208) cost 1389</title></circle>
+<circle cx="615.0" cy="236.6" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 21 (unused): (3926, 1484) cost 1337</title></circle>
+<circle cx="259.1" cy="452.7" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 22 (unused): (1584, 62) cost 1560</title></circle>
+<circle cx="173.2" cy="347.4" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 23 (unused): (1019, 755) cost 1815</title></circle>
+<circle cx="493.3" cy="179.8" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 24 (unused): (3125, 1858) cost 1312</title></circle>
+<circle cx="278.7" cy="451.9" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 25 (unused): (1713, 67) cost 1051</title></circle>
+<circle cx="620.0" cy="437.5" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 26 (unused): (3959, 162) cost 1320</title></circle>
+<circle cx="238.2" cy="401.0" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 27 (unused): (1447, 402) cost 1405</title></circle>
+<circle cx="233.4" cy="341.2" r="5.2" fill="rgb(210,138,38)" stroke="#222" stroke-width="0.6"><title>node 28: (1415, 796) cost 741</title></circle>
+<circle cx="548.0" cy="167.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 29: (3485, 1936) cost 494</title></circle>
+<circle cx="166.0" cy="367.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 30: (972, 623) cost 347</title></circle>
+<circle cx="32.9" cy="176.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 31: (96, 1879) cost 634</title></circle>
+<circle cx="152.4" cy="439.0" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 32 (unused): (882, 152) cost 1627</title></circle>
+<circle cx="379.1" cy="288.4" r="3.7" fill="rgb(240,193,53)" stroke="#222" stroke-width="0.6"><title>node 33: (2374, 1143) cost 248</title></circle>
+<circle cx="412.7" cy="215.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 34 (unused): (2595, 1621) cost 1527</title></circle>
+<circle cx="258.9" cy="315.3" r="4.1" fill="rgb(232,178,49)" stroke="#222" stroke-width="0.6"><title>node 35: (1583, 966) cost 382</title></circle>
+<circle cx="363.5" cy="325.8" r="3.3" fill="rgb(249,209,57)" stroke="#222" stroke-width="0.6"><title>node 36: (2271, 897) cost 98</title></circle>
+<circle cx="612.9" cy="304.2" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 37 (unused): (3912, 1039) cost 1051</title></circle>
+<circle cx="145.4" cy="235.5" r="5.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 38 (unused): (836, 1491) cost 961</title></circle>
+<circle cx="365.3" cy="161.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 39 (unused): (2283, 1976) cost 903</title></circle>
+<circle cx="169.7" cy="392.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 40 (unused): (996, 459) cost 1813</title></circle>
+<circle cx="339.1" cy="367.0" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 41 (unused): (2111, 626) cost 1056</title></circle>
+<circle cx="508.4" cy="392.5" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 42: (3225, 458) cost 870</title></circle>
+<circle cx="513.8" cy="363.8" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 43 (unused): (3260, 647) cost 1098</title></circle>
+<circle cx="146.6" cy="277.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 44 (unused): (844, 1215) cost 1659</title></circle>
+<circle cx="290.5" cy="369.9" r="4.5" fill="rgb(225,166,45)" stroke="#222" stroke-width="0.6"><title>node 45: (1791, 607) cost 491</title></circle>
+<circle cx="578.4" cy="223.7" r="7.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 46 (unused): (3685, 1569) cost 1465</title></circle>
+<circle cx="591.3" cy="311.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 47: (3770, 992) cost 291</title></circle>
+<circle cx="56.3" cy="169.9" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 48: (250, 1923) cost 219</title></circle>
+<circle cx="69.7" cy="297.4" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 49: (338, 1084) cost 573</title></circle>
+<circle cx="538.7" cy="292.7" r="3.6" fill="rgb(244,200,54)" stroke="#222" stroke-width="0.6"><title>node 50: (3424, 1115) cost 186</title></circle>
+<circle cx="269.8" cy="277.0" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 51: (1655, 1218) cost 196</title></circle>
+<circle cx="332.6" cy="310.6" r="4.7" fill="rgb(221,157,43)" stroke="#222" stroke-width="0.6"><title>node 52: (2068, 997) cost 570</title></circle>
+<circle cx="326.1" cy="340.5" r="4.2" fill="rgb(231,176,48)" stroke="#222" stroke-width="0.6"><title>node 53: (2025, 800) cost 403</title></circle>
+<circle cx="406.2" cy="296.5" r="4.8" fill="rgb(220,156,42)" stroke="#222" stroke-width="0.6"><title>node 54: (2552, 1090) cost 583</title></circle>
+<circle cx="590.7" cy="177.8" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 55 (unused): (3766, 1871) cost 887</title></circle>
+<circle cx="483.5" cy="214.0" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 56 (unused): (3061, 1633) cost 1762</title></circle>
+<circle cx="508.1" cy="454.2" r="3.4" fill="rgb(247,206,56)" stroke="#222" stroke-width="0.6"><title>node 57: (3223, 52) cost 126</title></circle>
+<circle cx="377.4" cy="403.8" r="3.7" fill="rgb(242,195,53)" stroke="#222" stroke-width="0.6"><title>node 58: (2363, 384) cost 223</title></circle>
+<circle cx="544.2" cy="248.9" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 59 (unused): (3460, 1403) cost 1152</title></circle>
+<circle cx="51.9" cy="263.6" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 60: (221, 1306) cost 533</title></circle>
+<circle cx="325.5" cy="383.6" r="6.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 61 (unused): (2021, 517) cost 1224</title></circle>
+<circle cx="377.1" cy="233.6" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 62 (unused): (2361, 1504) cost 927</title></circle>
+<circle cx="37.0" cy="296.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 63: (123, 1087) cost 27</title></circle>
+<circle cx="550.5" cy="455.3" r="5.6" fill="rgb(203,125,34)" stroke="#222" stroke-width="0.6"><title>node 64: (3502, 45) cost 859</title></circle>
+<circle cx="430.2" cy="400.0" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 65 (unused): (2710, 409) cost 1286</title></circle>
+<circle cx="99.0" cy="246.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 66 (unused): (531, 1421) cost 1554</title></circle>
+<circle cx="297.2" cy="319.9" r="3.1" fill="rgb(253,217,59)" stroke="#222" stroke-width="0.6"><title>node 67: (1835, 936) cost 29</title></circle>
+<circle cx="156.0" cy="289.9" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 68 (unused): (906, 1133) cost 1965</title></circle>
+<circle cx="64.1" cy="426.9" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 69: (301, 232) cost 724</title></circle>
+<circle cx="254.8" cy="403.6" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 70 (unused): (1556, 385) cost 1602</title></circle>
+<circle cx="194.5" cy="212.6" r="5.2" fill="rgb(211,139,38)" stroke="#222" stroke-width="0.6"><title>node 71: (1159, 1642) cost 739</title></circle>
+<circle cx="441.6" cy="368.8" r="6.1" fill="rgb(194,108,29)" stroke="#222" stroke-width="0.6"><title>node 72: (2785, 614) cost 1018</title></circle>
+<circle cx="318.0" cy="383.3" r="5.3" fill="rgb(208,134,37)" stroke="#222" stroke-width="0.6"><title>node 73: (1972, 519) cost 781</title></circle>
+<circle cx="342.8" cy="293.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 74 (unused): (2135, 1108) cost 1975</title></circle>
+<circle cx="606.8" cy="426.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 75 (unused): (3872, 238) cost 1160</title></circle>
+<circle cx="187.2" cy="263.0" r="4.3" fill="rgb(229,173,47)" stroke="#222" stroke-width="0.6"><title>node 76: (1111, 1310) cost 426</title></circle>
+<circle cx="20.0" cy="187.5" r="7.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 77 (unused): (11, 1807) cost 1394</title></circle>
+<circle cx="611.3" cy="456.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 78: (3902, 40) cost 667</title></circle>
+<circle cx="547.7" cy="168.1" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 79 (unused): (3483, 1935) cost 1943</title></circle>
+<circle cx="111.0" cy="217.1" r="3.1" fill="rgb(254,218,59)" stroke="#222" stroke-width="0.6"><title>node 80: (610, 1612) cost 21</title></circle>
+<circle cx="499.3" cy="326.6" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 81 (unused): (3165, 892) cost 1172</title></circle>
+<circle cx="51.2" cy="261.1" r="6.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 82 (unused): (216, 1323) cost 1287</title></circle>
+<circle cx="131.1" cy="306.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 83: (742, 1027) cost 997</title></circle>
+<circle cx="381.2" cy="381.0" r="4.4" fill="rgb(226,167,46)" stroke="#222" stroke-width="0.6"><title>node 84: (2388, 534) cost 477</title></circle>
+<circle cx="491.1" cy="296.6" r="5.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 85 (unused): (3111, 1089) cost 838</title></circle>
+<circle cx="578.5" cy="198.9" r="8.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 86 (unused): (3686, 1732) cost 1833</title></circle>
+<circle cx="239.5" cy="374.7" r="4.2" fill="rgb(231,175,48)" stroke="#222" stroke-width="0.6"><title>node 87: (1455, 575) cost 407</title></circle>
+<circle cx="590.1" cy="447.7" r="5.3" fill="rgb(209,136,37)" stroke="#222" stroke-width="0.6"><title>node 88: (3762, 95) cost 765</title></circle>
+<circle cx="514.8" cy="391.2" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 89: (3267, 467) cost 240</title></circle>
+<circle cx="147.1" cy="298.4" r="5.9" fill="rgb(197,114,31)" stroke="#222" stroke-width="0.6"><title>node 90: (847, 1077) cost 958</title></circle>
+<circle cx="151.3" cy="204.8" r="4.7" fill="rgb(220,156,43)" stroke="#222" stroke-width="0.6"><title>node 91: (875, 1693) cost 582</title></circle>
+<circle cx="130.6" cy="433.7" r="6.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 92 (unused): (739, 187) cost 1116</title></circle>
+<circle cx="533.2" cy="326.3" r="3.4" fill="rgb(247,205,56)" stroke="#222" stroke-width="0.6"><title>node 93: (3388, 894) cost 138</title></circle>
+<circle cx="63.2" cy="430.5" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 94 (unused): (295, 208) cost 1568</title></circle>
+<circle cx="70.8" cy="380.2" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 95 (unused): (345, 539) cost 1085</title></circle>
+<circle cx="235.8" cy="403.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 96 (unused): (1431, 387) cost 1490</title></circle>
+<circle cx="77.9" cy="378.4" r="3.6" fill="rgb(243,198,54)" stroke="#222" stroke-width="0.6"><title>node 97: (392, 551) cost 196</title></circle>
+<circle cx="261.2" cy="415.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 98 (unused): (1598, 306) cost 887</title></circle>
+<circle cx="373.8" cy="344.5" r="6.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 99 (unused): (2339, 774) cost 1088</title></circle>
+<circle cx="133.7" cy="281.1" r="5.9" fill="rgb(198,115,31)" stroke="#222" stroke-width="0.6"><title>node 100: (759, 1191) cost 949</title></circle>
+<circle cx="566.2" cy="201.2" r="5.5" fill="rgb(204,127,35)" stroke="#222" stroke-width="0.6"><title>node 101: (3605, 1717) cost 844</title></circle>
+<circle cx="251.0" cy="346.0" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 102: (1531, 764) cost 1003</title></circle>
+<circle cx="529.1" cy="395.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 103 (unused): (3361, 440) cost 1341</title></circle>
+<circle cx="28.1" cy="457.7" r="5.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 104 (unused): (64, 29) cost 721</title></circle>
+<circle cx="490.5" cy="440.1" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 105 (unused): (3107, 145) cost 1905</title></circle>
+<circle cx="502.4" cy="369.6" r="3.4" fill="rgb(246,204,56)" stroke="#222" stroke-width="0.6"><title>node 106: (3185, 609) cost 144</title></circle>
+<circle cx="568.2" cy="417.3" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 107: (3618, 295) cost 4</title></circle>
+<circle cx="83.5" cy="266.5" r="5.0" fill="rgb(214,145,40)" stroke="#222" stroke-width="0.6"><title>node 108: (429, 1287) cost 678</title></circle>
+<circle cx="436.1" cy="223.2" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 109 (unused): (2749, 1572) cost 1851</title></circle>
+<circle cx="74.3" cy="439.8" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 110 (unused): (368, 147) cost 1538</title></circle>
+<circle cx="442.2" cy="452.9" r="6.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 111 (unused): (2789, 61) cost 1031</title></circle>
+<circle cx="283.8" cy="209.5" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 112 (unused): (1747, 1662) cost 782</title></circle>
+<circle cx="527.3" cy="377.6" r="5.8" fill="rgb(200,119,32)" stroke="#222" stroke-width="0.6"><title>node 113: (3349, 556) cost 916</title></circle>
+<circle cx="305.7" cy="460.0" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 114: (1891, 14) cost 500</title></circle>
+<circle cx="283.4" cy="172.0" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 115 (unused): (1744, 1909) cost 750</title></circle>
+<circle cx="20.9" cy="285.7" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 116: (17, 1161) cost 539</title></circle>
+<circle cx="549.0" cy="359.5" r="7.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 117 (unused): (3492, 675) cost 1638</title></circle>
+<circle cx="333.5" cy="455.9" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 118 (unused): (2074, 41) cost 1997</title></circle>
+<circle cx="37.5" cy="312.1" r="6.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 119 (unused): (126, 987) cost 1192</title></circle>
+<circle cx="97.7" cy="404.2" r="7.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 120 (unused): (522, 381) cost 1577</title></circle>
+<circle cx="309.8" cy="401.6" r="7.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 121 (unused): (1918, 398) cost 1531</title></circle>
+<circle cx="587.5" cy="444.8" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 122 (unused): (3745, 114) cost 1703</title></circle>
+<circle cx="129.4" cy="300.9" r="3.7" fill="rgb(241,195,53)" stroke="#222" stroke-width="0.6"><title>node 123: (731, 1061) cost 226</title></circle>
+<circle cx="524.6" cy="420.5" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 124 (unused): (3331, 274) cost 1676</title></circle>
+<circle cx="133.1" cy="390.1" r="9.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 125 (unused): (755, 474) cost 1988</title></circle>
+<circle cx="87.2" cy="171.7" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 126 (unused): (453, 1911) cost 1953</title></circle>
+<circle cx="77.0" cy="387.4" r="4.8" fill="rgb(219,155,42)" stroke="#222" stroke-width="0.6"><title>node 127: (386, 492) cost 592</title></circle>
+<circle cx="505.4" cy="286.3" r="8.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 128 (unused): (3205, 1157) cost 1754</title></circle>
+<circle cx="28.2" cy="449.1" r="5.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 129 (unused): (65, 86) cost 758</title></circle>
+<circle cx="579.1" cy="376.1" r="4.2" fill="rgb(232,177,48)" stroke="#222" stroke-width="0.6"><title>node 130: (3690, 566) cost 386</title></circle>
+<circle cx="381.4" cy="332.6" r="4.9" fill="rgb(217,150,41)" stroke="#222" stroke-width="0.6"><title>node 131: (2389, 852) cost 636</title></circle>
+<circle cx="176.8" cy="275.0" r="3.2" fill="rgb(251,212,58)" stroke="#222" stroke-width="0.6"><title>node 132: (1043, 1231) cost 71</title></circle>
+<circle cx="275.5" cy="256.8" r="7.3" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 133 (unused): (1692, 1351) cost 1422</title></circle>
+<circle cx="411.8" cy="382.8" r="3.7" fill="rgb(241,194,53)" stroke="#222" stroke-width="0.6"><title>node 134: (2589, 522) cost 236</title></circle>
+<circle cx="321.8" cy="402.2" r="3.3" fill="rgb(248,208,57)" stroke="#222" stroke-width="0.6"><title>node 135: (1997, 394) cost 110</title></circle>
+<circle cx="463.8" cy="176.4" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 136: (2931, 1880) cost 497</title></circle>
+<circle cx="116.2" cy="192.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 137 (unused): (644, 1775) cost 1785</title></circle>
+<circle cx="454.7" cy="421.1" r="6.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 138 (unused): (2871, 270) cost 985</title></circle>
+<circle cx="279.9" cy="224.3" r="5.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 139 (unused): (1721, 1565) cost 857</title></circle>
+<circle cx="323.0" cy="353.2" r="4.8" fill="rgb(219,154,42)" stroke="#222" stroke-width="0.6"><title>node 140: (2005, 717) cost 598</title></circle>
+<circle cx="204.5" cy="371.4" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 141: (1225, 597) cost 61</title></circle>
+<circle cx="470.2" cy="285.7" r="6.1" fill="rgb(193,107,29)" stroke="#222" stroke-width="0.6"><title>node 142: (2973, 1161) cost 1029</title></circle>
+<circle cx="363.5" cy="265.5" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 143 (unused): (2271, 1294) cost 921</title></circle>
+<circle cx="311.0" cy="324.1" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 144: (1926, 908) cost 335</title></circle>
+<circle cx="199.6" cy="364.3" r="7.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 145 (unused): (1193, 644) cost 1486</title></circle>
+<circle cx="609.4" cy="400.0" r="5.7" fill="rgb(202,122,33)" stroke="#222" stroke-width="0.6"><title>node 146: (3889, 409) cost 889</title></circle>
+<circle cx="616.5" cy="264.0" r="4.6" fill="rgb(223,161,44)" stroke="#222" stroke-width="0.6"><title>node 147: (3936, 1304) cost 536</title></circle>
+<circle cx="143.9" cy="311.5" r="7.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 148 (unused): (826, 991) cost 1363</title></circle>
+<circle cx="32.0" cy="289.0" r="3.4" fill="rgb(248,206,56)" stroke="#222" stroke-width="0.6"><title>node 149: (90, 1139) cost 124</title></circle>
+<circle cx="484.9" cy="372.5" r="4.9" fill="rgb(217,151,41)" stroke="#222" stroke-width="0.6"><title>node 150: (3070, 590) cost 628</title></circle>
+<circle cx="483.7" cy="396.3" r="4.9" fill="rgb(218,152,41)" stroke="#222" stroke-width="0.6"><title>node 151: (3062, 433) cost 621</title></circle>
+<circle cx="101.3" cy="275.3" r="4.3" fill="rgb(228,171,47)" stroke="#222" stroke-width="0.6"><title>node 152: (546, 1229) cost 446</title></circle>
+<circle cx="604.7" cy="441.6" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 153: (3858, 135) cost 665</title></circle>
+<circle cx="384.3" cy="174.6" r="6.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 154 (unused): (2408, 1892) cost 1051</title></circle>
+<circle cx="582.6" cy="231.1" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 155 (unused): (3713, 1520) cost 1747</title></circle>
+<circle cx="250.2" cy="315.6" r="6.0" fill="rgb(196,111,30)" stroke="#222" stroke-width="0.6"><title>node 156: (1526, 964) cost 985</title></circle>
+<circle cx="192.3" cy="198.4" r="4.1" fill="rgb(233,180,49)" stroke="#222" stroke-width="0.6"><title>node 157: (1145, 1735) cost 360</title></circle>
+<circle cx="411.3" cy="431.0" r="4.7" fill="rgb(221,158,43)" stroke="#222" stroke-width="0.6"><title>node 158: (2586, 205) cost 567</title></circle>
+<circle cx="607.7" cy="385.4" r="3.9" fill="rgb(238,188,51)" stroke="#222" stroke-width="0.6"><title>node 159: (3878, 505) cost 291</title></circle>
+<circle cx="123.5" cy="314.4" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 160: (692, 972) cost 909</title></circle>
+<circle cx="133.5" cy="386.6" r="5.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 161 (unused): (758, 497) cost 914</title></circle>
+<circle cx="168.0" cy="306.8" r="6.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 162 (unused): (985, 1022) cost 1250</title></circle>
+<circle cx="507.4" cy="165.9" r="6.2" fill="rgb(192,104,28)" stroke="#222" stroke-width="0.6"><title>node 163: (3218, 1949) cost 1049</title></circle>
+<circle cx="472.0" cy="253.3" r="3.1" fill="rgb(253,216,59)" stroke="#222" stroke-width="0.6"><title>node 164: (2985, 1374) cost 37</title></circle>
+<circle cx="470.6" cy="420.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 165 (unused): (2976, 276) cost 1887</title></circle>
+<circle cx="187.9" cy="429.9" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 166 (unused): (1116, 212) cost 1785</title></circle>
+<circle cx="55.7" cy="279.6" r="8.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 167 (unused): (246, 1201) cost 1939</title></circle>
+<circle cx="25.6" cy="324.7" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 168: (48, 904) cost 346</title></circle>
+<circle cx="537.9" cy="272.8" r="6.0" fill="rgb(195,110,30)" stroke="#222" stroke-width="0.6"><title>node 169: (3419, 1246) cost 998</title></circle>
+<circle cx="610.4" cy="401.9" r="5.6" fill="rgb(203,124,34)" stroke="#222" stroke-width="0.6"><title>node 170: (3896, 396) cost 872</title></circle>
+<circle cx="155.3" cy="436.3" r="4.5" fill="rgb(225,165,45)" stroke="#222" stroke-width="0.6"><title>node 171: (901, 170) cost 497</title></circle>
+<circle cx="249.6" cy="308.2" r="8.2" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 172 (unused): (1522, 1013) cost 1737</title></circle>
+<circle cx="257.1" cy="264.4" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 173 (unused): (1571, 1301) cost 1808</title></circle>
+<circle cx="454.5" cy="335.2" r="3.7" fill="rgb(242,196,53)" stroke="#222" stroke-width="0.6"><title>node 174: (2870, 835) cost 221</title></circle>
+<circle cx="311.5" cy="165.8" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 175 (unused): (1929, 1950) cost 1160</title></circle>
+<circle cx="452.2" cy="363.8" r="4.0" fill="rgb(235,183,50)" stroke="#222" stroke-width="0.6"><title>node 176: (2855, 647) cost 332</title></circle>
+<circle cx="349.6" cy="327.3" r="3.2" fill="rgb(252,214,58)" stroke="#222" stroke-width="0.6"><title>node 177: (2180, 887) cost 53</title></circle>
+<circle cx="526.1" cy="205.4" r="4.0" fill="rgb(234,182,50)" stroke="#222" stroke-width="0.6"><title>node 178: (3341, 1689) cost 346</title></circle>
+<circle cx="333.1" cy="328.8" r="5.2" fill="rgb(212,140,38)" stroke="#222" stroke-width="0.6"><title>node 179: (2071, 877) cost 723</title></circle>
+<circle cx="214.8" cy="331.4" r="3.0" fill="rgb(255,220,60)" stroke="#222" stroke-width="0.6"><title>node 180: (1293, 860) cost 0</title></circle>
+<circle cx="343.9" cy="442.5" r="5.2" fill="rgb(211,140,38)" stroke="#222" stroke-width="0.6"><title>node 181: (2142, 129) cost 724</title></circle>
+<circle cx="474.0" cy="443.6" r="5.1" fill="rgb(213,143,39)" stroke="#222" stroke-width="0.6"><title>node 182: (2998, 122) cost 698</title></circle>
+<circle cx="200.5" cy="439.6" r="8.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 183 (unused): (1199, 148) cost 1677</title></circle>
+<circle cx="491.3" cy="209.1" r="5.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 184 (unused): (3112, 1665) cost 941</title></circle>
+<circle cx="269.7" cy="338.9" r="5.0" fill="rgb(214,146,40)" stroke="#222" stroke-width="0.6"><title>node 185: (1654, 811) cost 675</title></circle>
+<circle cx="440.8" cy="200.3" r="5.4" fill="rgb(208,134,36)" stroke="#222" stroke-width="0.6"><title>node 186: (2780, 1723) cost 783</title></circle>
+<circle cx="173.8" cy="391.3" r="3.2" fill="rgb(251,213,58)" stroke="#222" stroke-width="0.6"><title>node 187: (1023, 466) cost 67</title></circle>
+<circle cx="40.7" cy="402.1" r="8.4" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 188 (unused): (147, 395) cost 1811</title></circle>
+<circle cx="192.5" cy="410.9" r="5.7" fill="rgb(200,120,33)" stroke="#222" stroke-width="0.6"><title>node 189: (1146, 337) cost 910</title></circle>
+<circle cx="308.4" cy="264.4" r="8.1" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 190 (unused): (1909, 1301) cost 1689</title></circle>
+<circle cx="205.6" cy="342.2" r="8.7" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 191 (unused): (1232, 789) cost 1896</title></circle>
+<circle cx="394.3" cy="453.0" r="5.0" fill="rgb(215,147,40)" stroke="#222" stroke-width="0.6"><title>node 192: (2474, 60) cost 667</title></circle>
+<circle cx="608.1" cy="446.8" r="5.6" fill="rgb(204,126,34)" stroke="#222" stroke-width="0.6"><title>node 193: (3881, 101) cost 854</title></circle>
+<circle cx="441.9" cy="301.0" r="6.5" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 194 (unused): (2787, 1060) cost 1168</title></circle>
+<circle cx="476.2" cy="197.8" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 195 (unused): (3013, 1739) cost 1973</title></circle>
+<circle cx="249.2" cy="262.3" r="7.0" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 196 (unused): (1519, 1315) cost 1347</title></circle>
+<circle cx="484.6" cy="160.5" r="8.6" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 197 (unused): (3068, 1985) cost 1868</title></circle>
+<circle cx="162.1" cy="417.6" r="8.9" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 198 (unused): (946, 293) cost 1976</title></circle>
+<circle cx="34.3" cy="169.9" r="7.8" fill="none" stroke="#aaa" stroke-width="0.8"><title>node 199 (unused): (105, 1923) cost 1608</title></circle>
+<circle cx="32.9" cy="176.6" r="11" fill="none" stroke="#3b6ea5" stroke-width="2"><title>start: node 31</title></circle></svg><div class="legend"><span class="bar"></span> node cost 0 &rarr; 1997 (colour and size) &middot; hollow grey = not selected &middot; ring = first node</div>
+  <h3>Best solution (node indices, from 0)</h3>
+  <pre>31, 116, 149, 168, 63, 11, 49, 60, 108, 152, 100, 90, 123, 83, 160, 97, 127, 69, 171, 2, 189, 30, 187, 141, 87, 45, 73, 135, 114, 181, 192, 158, 58, 84, 134, 72, 176, 150, 151, 182, 57, 64, 107, 88, 78, 193, 153, 170, 146, 159, 130, 113, 89, 42, 106, 93, 47, 147, 50, 3, 169, 1, 178, 101, 29, 163, 136, 186, 164, 142, 8, 174, 131, 54, 9, 33, 36, 177, 52, 179, 53, 140, 144, 67, 16, 51, 156, 35, 185, 102, 28, 180, 132, 76, 4, 71, 157, 91, 80, 48</pre>
+  <h3>Solution checker</h3>
+  <p><span class="ok">&#10004; checked</span>: 100 distinct nodes, all indices valid.</p>
+</section>
+<p>Source code: <a href="Greedy_heuristics.cs">Greedy_heuristics.cs</a></p>
+<h2>Conclusions</h2><p>Among the four tested methods, random search unsurprisingly performs the worst. Nodes are linked erratically, without exploiting any locality, which results in long and inefficient connections.</p><p>Nearest neighbour (end) cuts the average cost by more than half compared to random search. It exploits the locality of neighbouring nodes, but it is clearly limited by always attaching the next node to the end of the current path.</p><p>Nearest neighbour (any position) performs better still, lowering the average cost by over ten thousand compared to nearest neighbour (end). Exploiting locality along the entire path lets each new node be placed where it fits best.</p><p>Greedy cycle performs the best on average and in the worst case, slightly ahead of nearest neighbour (any position), although the latter found the single best solution. Greedy cycle applies the heuristic to the entire tour at every step, including the edge between its ends, so the solution is built with the final cycle in mind from the start. This is significant, because nearest neighbour (any position) only joins the ends of the path at the very end, while greedy cycle keeps optimising with that closing edge accounted for.</p>
+</body></html>
