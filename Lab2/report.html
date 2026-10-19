@@ -3394,7 +3394,7 @@ w1 : w2 = 1 : 1. The last column shows how much worse the average is than the be
 <pre>91, 36, 197, 132, 29, 6, 180, 115, 170, 177, 125, 26, 97, 154, 140, 47, 38, 21, 30, 183, 191, 130, 63, 121, 198, 96, 48, 43, 156, 32, 89, 57, 79, 185, 104, 54, 196, 114, 10, 90, 14, 2, 20, 153, 129, 127, 80, 192, 162, 76, 135, 27, 11, 66, 67, 24, 34, 152, 181, 126, 88, 179, 87, 82, 167, 51, 85, 59, 73, 98, 151, 122, 173, 3, 184, 86, 46, 72, 117, 8, 120, 133, 136, 172, 160, 69, 124, 4, 64, 33, 155, 71, 141, 40, 60, 157, 45, 134, 175, 62</pre></section>
 <p>Source code: <a href="https://github.com/CodeSencor/evolutionary-computation">https://github.com/CodeSencor/evolutionary-computation</a></p>
 <h2>Conclusions</h2>
-<p>When testing the weights for weighted sum it turned out that the 1:1 ratio was the best.</p>
+<p>When testing the weights for weighted sum it turned out that the 1:1.5 ratio was the best, but in this version of the notebook we chose 1:1 just to cross check the results with out collegues..</p>
 <p>Across both instances, the heuristics with a built-in cost-aware criterion win. Greedy cycle with the weighted sum is best on TSPA, and nearest neighbor (any position) with the weighted sum is best on TSPB. Plain greedy cycle and nearest neighbor with insertion at any position come within a few percent of the best on both.</p>
 <p>The ranking is not identical across instances. On TSPA the greedy cycle variants lead. On TSPB the nearest neighbor variants are stronger and less stable. So no single method dominates, but the regret is a reliable heuristic.</p>
 </body></html>
