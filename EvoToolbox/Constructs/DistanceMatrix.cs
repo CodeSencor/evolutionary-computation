@@ -1,13 +1,13 @@
 using EvoToolbox.Objects;
 
-namespace EvoToolbox.Utilities;
+namespace EvoToolbox.Constructs;
 
-public class CostUtility
+public class DistanceMatrix
 {
     private readonly Node[] _masterArray;
     private uint[,] _distanceMatrix;
 
-    public CostUtility(Node[] masterArray)
+    public DistanceMatrix(Node[] masterArray)
     {
         _masterArray = masterArray;
         _distanceMatrix = new uint[masterArray.Length, masterArray.Length];
@@ -19,6 +19,8 @@ public class CostUtility
             }
         }
     }
+
+    public uint Distance(Node left, Node right) => _distanceMatrix[left.Index, right.Index];
 
     public uint Delta(Node left, Node right, Node joins)
     {

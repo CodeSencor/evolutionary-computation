@@ -8,19 +8,19 @@
     "net8.0": []
   },
   "packageFolders": {
-    "/home/piotr/.nuget/packages/": {}
+    "/home/determinator/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/Greedy.csproj",
+      "projectUniqueName": "/home/determinator/Sync/Programming/RiderProjects/EVO/Lab1/Greedy/Greedy.csproj",
       "projectName": "Greedy",
-      "projectPath": "/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/Greedy.csproj",
-      "packagesPath": "/home/piotr/.nuget/packages/",
-      "outputPath": "/home/piotr/Desktop/Evolutionary Computation/Lab1/Greedy/obj/",
+      "projectPath": "/home/determinator/Sync/Programming/RiderProjects/EVO/Lab1/Greedy/Greedy.csproj",
+      "packagesPath": "/home/determinator/.nuget/packages/",
+      "outputPath": "/home/determinator/Sync/Programming/RiderProjects/EVO/Lab1/Greedy/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/piotr/.nuget/NuGet/NuGet.Config"
+        "/home/determinator/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -30,6 +30,7 @@
       },
       "frameworks": {
         "net8.0": {
+          "framework": "net8.0",
           "targetAlias": "net8.0",
           "projectReferences": {}
         }
@@ -43,10 +44,12 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net8.0": {
+        "framework": "net8.0",
         "targetAlias": "net8.0",
         "imports": [
           "net461",
@@ -59,12 +62,26 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.32, 8.0.32]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.linux-x64",
+            "version": "[8.0.32, 8.0.32]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.32, 8.0.32]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/snap/dotnet-sdk/256/sdk/8.0.407/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.113/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
